@@ -1,0 +1,7 @@
+name,plot_name,description
+Date,Date,sampling date
+Tidepool_ID,Tidepool ID,tidepool identifier
+Sample_ID,Sample ID,sample number
+Time,Time,time sample was taken (24 Hr)
+Tidepool_height,Tidepool Height,height of tide pool relative to tidal level (m)
+Sample_volume,Volume,volume of sample taken (mL)

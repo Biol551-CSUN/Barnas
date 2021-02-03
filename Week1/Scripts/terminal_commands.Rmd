@@ -1,0 +1,19 @@
+## Terminal commands
+
+git pull
+
+git add
+- for new files only
+- ex. git add NewScript.R
+  - adds a single file
+- ex. git add NewFolder/
+  - adds all files within a folder
+
+git commit -a -m "Message goes here"
+- for any modified files
+- the -a commits all modified files
+- the -m initiates a message for the commit
+- commit acts as a version controlled Save, so commit frequently
+
+git push
+- do at the end of the day for all committed files
