@@ -17,3 +17,11 @@ git commit -a -m "Message goes here"
 
 git push
 - do at the end of the day for all committed files
+
+mkdir 
+- make a new directory (folder)
+- ex. mkdir Week2
+  - creates the Week2 folder within the main repository
+- ex. mkdir Week2/Data
+  - creates the Data folder within the already created Week2 folder
+- cannot create a file path that doesn't already exist

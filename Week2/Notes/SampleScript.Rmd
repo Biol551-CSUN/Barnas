@@ -1,0 +1,12 @@
+## Creating a sample script
+
+library(here)
+- creates an unbreakable file path
+- makes collaboration easier
+- use the function here::here()
+- ex. my_data<-read_csv(here("data_folder","sb_temp.csv"))
+  - searches for the csv within data_folder
+- put a comma through every directory level
+  - for more embedded files, you would have multiple commas
+- note to self: change all my filepaths in SilbigerLab lol
+
