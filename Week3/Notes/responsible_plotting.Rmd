@@ -1,0 +1,84 @@
+## Plotting your data
+
+Continuous (measured observations):
+- jitter plots
+- beeswarm plots (ggbeeswarm)
+  - the spared of data depends on the density/frequency
+- scatter plots
+  - shows relationship between two measured variables
+  
+Don't hide your data
+
+Data Visualization:
+- is it correct?
+  - keep raw data raw
+  - check every step of cleaning and data wrangling
+  - compare outcomes to expected results
+  - is it reproducible and annotated
+  - get an outside reviewer to check your code
+  - check units/labels
+- is it clear?
+  - too many points/variables/series?
+  - overwhelming legends
+  - lack of useful emphasis
+  - are things put in context
+  - is it a pie graph? (don't do it)
+  - overmapping aesthetics
+  - is it 3D (please don't do 3D on a 2D platform)
+- does it comunicate data responsibly?
+  - is your graph even appropriate
+  - does it have misleading axes ranges or directions?
+    - reversing scale direction
+    - transforming or presenting in a way that's misleading
+    - showing the same scale
+- does it look awesome?
+  - never sacrifice clarity for creativity
+  - declutter your graphs
+  - empty and inked space balance
+  - thoughtful color schemes (always clarity > beauty)
+  - for each element/design decision:
+    - is it necessary and helpful?
+    - is it presented in the best way to encourage audeince understanding and retention of the most critical points?
+
+Legends vs Labels
+- put legends somewhere so that you eyes don't have to jump around the page
+- sometimes labels are clearer than legends. Then you don't have to jump back and forth from the figure to the legend
+- legends should make logical order
+
+Add summary statistics, models, etc is good, but try to also show the actual data
+- ex. have a box plot with a violin plot underlain or a scatter underlain to show spread of the data
+- Marginal Plots
+  - allows you to see summary statistics with the raw data
+
+ggplot: changing the default
+- update axis labels
+- reduce width of groups
+- remove background grey
+- remove gridlines
+- no auto-updated x scale
+- abbreviations are sometimes hard to understand
+
+badness
+- color gradients with a single element (don't go light red to dark red, instead maybe red to blue)
+- shadows
+- 3D with rare exceptions
+
+sometimes bad
+- multiple legends
+- overuse of colors
+- many symbols of line types
+- labels for values (esp if many) - consider a table of exact value if important
+- really creative fonts (stick to classic san serif fonts)
+
+
+
+
+
+
+
+
+
+
+
+
+

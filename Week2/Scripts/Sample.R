@@ -16,3 +16,6 @@ weightdata<-read_csv(here("Week2","Data","weightdata.csv"))
 head(weightdata)
 tail(weightdata)
 View(weightdata)
+
+
+## Functions ##
