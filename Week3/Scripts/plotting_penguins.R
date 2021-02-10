@@ -14,6 +14,9 @@ library(here)
 # library(ghibli)
 library(beyonce)
 
+# library(patchwork)
+# library(ggstatsplot)
+
 
 ### Load Data ###
 # The data is part of the package and is called penguins
@@ -202,7 +205,7 @@ ggplot(data = penguins,
 
 
 # theme_bw() with customizations
-ggplot(data = penguins,
+plot1<-ggplot(data = penguins,
        mapping = aes(x = bill_depth_mm,
                      y = bill_length_mm,
                      group = species, # groups the data by species (allows geom_smooth to plot separate best fit lines)
@@ -220,7 +223,14 @@ ggplot(data = penguins,
         panel.background = element_rect(fill = "linen"), # change graph background color (can be any color or hex)
         legend.position = "top" # move the legend to the top of the figure
         ) +
-  ggsave(here("Week3/Output/penguins.png"), width = 7, height = 5) # in inches
+  ggsave(here("Week3","Output","penguins.png"), width = 7, height = 5) # in inches
+
+
+###### ggplot2 Extensions Resources
+# exts.ggplot2.tidyverse.org/gallery
+# ggplot2-book.org/mastery.html
+
+
 
 
 
