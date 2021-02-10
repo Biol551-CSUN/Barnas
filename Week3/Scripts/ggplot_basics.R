@@ -2,6 +2,7 @@
 # Created by Danielle Barnas
 # Created on 2021-02-08
 #################################################################
+
 ## Grammar of Graphics (ggplot2)
 
 ## Structure summary:
