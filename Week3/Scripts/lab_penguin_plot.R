@@ -51,7 +51,7 @@ ggplot(data=penguins,
   facet_wrap( ~ island, ncol = 3) +
   ggsave(here("Week3","Output","lab_penguin_plot.png"), width = 10, height = 8)
   
-  
+
 
   
   
