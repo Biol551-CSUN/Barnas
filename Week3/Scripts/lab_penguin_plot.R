@@ -17,39 +17,39 @@ rm(list=ls())
 View(penguins)
 
 penguins<-penguins%>%
-  drop_na(sex)
-
+  drop_na(sex) # remove na's from relevant data
 
 # assign color palette
-pal <- pnw_palette("Winter",2)
+pal <- pnw_palette("Winter",2) # assign color palette, selecting 2 colors
 
 ggplot(data=penguins,
        aes(x = species, 
            y = flipper_length_mm,
-           color = sex,
-           fill = sex
+           color = sex, # group data by sex
+           fill = sex # fills in boxplots by sex
            )) + 
-  geom_boxplot(alpha=0.5) + 
-  geom_jitter(alpha=0.5, position = position_jitterdodge(
-    jitter.width = NULL,
-    jitter.height = 0,
-    dodge.width = 0.75
-  )) +
-  labs(x = "Species",
+  geom_boxplot(alpha=0.5) + # create boxplot and set the fill transparency
+  geom_jitter(alpha=0.5, # overlay raw data and set point transparency
+              position = position_jitterdodge( # set the position of the overlain points to be over their respective boxplots
+              jitter.width = NULL,
+              jitter.height = 0,
+              dodge.width = 0.75
+              )) +
+  labs(x = "Species", # change labeling of figure elements
        y = "Flipper Length (mm)",
        color = "Sex",
        fill = "Sex",
        title = "Flipper length of male and female penguins",
        subtitle = "Penguin distribution by island"
   ) + 
-  theme_bw() +
+  theme_bw() + # set theme to Black-White
   theme(axis.title = element_text(size = 20), # change text size for both axes
         legend.position = "right" # move the legend to the top of the figure
   ) +
-  scale_color_manual(values = pal, labels=c("Female","Male")) +
-  scale_fill_manual(values = pal, labels=c("Female","Male")) +
-  facet_wrap( ~ island, ncol = 3) +
-  ggsave(here("Week3","Output","lab_penguin_plot.png"), width = 10, height = 8)
+  scale_color_manual(values = pal, labels=c("Female","Male")) + # set the boxplot outline colors to PNW and change value labels
+  scale_fill_manual(values = pal, labels=c("Female","Male")) + # set the boxplot fill colors to PNW and change value labels to be consistent with color
+  facet_wrap( ~ island, ncol = 3) + # show three figures, one per island
+  ggsave(here("Week3","Output","lab_penguin_plot.png"), width = 10, height = 8) # safe figure
   
 
 
