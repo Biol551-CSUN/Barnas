@@ -25,6 +25,11 @@ library(palmerpenguins)
 library(here)
 ```
 
+```{r,include = FALSE}
+here() # set working directory
+```
+
+
 # Inspect the data
 ```{r, echo = FALSE}
 # include = FALSE means this code and output won't show in the HTML doc
@@ -52,6 +57,9 @@ penguins %>%
   theme_bw()
 ```
 
+# Unrelated Nova photo
+
+![Nova's Big Yawn](/Users/daniellebarnas/Documents/R Sessions/Modeling_Class_Barnas/Week6/Images/BigYawn.png)
 
 
 
