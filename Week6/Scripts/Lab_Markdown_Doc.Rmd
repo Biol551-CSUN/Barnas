@@ -1,0 +1,58 @@
+---
+title: "Example Markdown Doc"
+author: "Danielle Barnas"
+date: "3/1/2021"
+output: 
+  html_document:
+      toc: TRUE
+      toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+# How to set Global Options (will affect all R scripts throughout the doc)
+knitr::opts_chunk$set(echo = TRUE, # ALWAYS show the code
+                      warning = FALSE, # NEVER show the warnings
+                      message = FALSE) # NEVER show messages
+```
+
+# Introduction 
+Today we are gong to work with the penguin data to learn *RMarkdown*.
+
+## Load Libraries
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+library(here)
+```
+
+# Inspect the data
+```{r, echo = FALSE}
+# include = FALSE means this code and output won't show in the HTML doc
+# echo = FALSE means the Output will show but not the code
+glimpse(penguins)
+```
+
+# Make a plot
+This is a plot of penguin bill length by bill depth.  **Species** are in colors.  
+Species:
+- Gentoo  
+  - first penguin  
+- Adelie  
+  - second penguin  
+- Chinstrap  
+  - third penguin  
+
+```{r}
+penguins %>% 
+  ggplot(aes(x = bill_length_mm, y = bill_depth_mm, color = species))+
+  geom_point()+
+  geom_smooth(method = "lm")+ # here is the linear model
+  labs(x = "Bill Length (mm)", 
+       y = "Bill Depth (mm)")+
+  theme_bw()
+```
+
+
+
+
+

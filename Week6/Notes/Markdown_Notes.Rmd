@@ -1,0 +1,79 @@
+# Markdown Class Notes
+## Week 6
+## March 1, 2021
+
+Note: Doc will not knit with current format. for Notes only
+
+Markdown doc: What's inside
+- Metadata
+- Text
+- Code
+- Output
+  
+YAML: Yet Another Markdown Language
+- always goes at the top of the markdown doc
+- describes the type of document
+- need at least two pieces (but there are many more you could use): 
+  - title
+  - output
+- there are multiple themes you can use
+- you can add a table of contents
+- the tabbed location of keys matters. make sure subsets are indented below the heading element
+  
+Text elements:  
+- Headers
+  - used to determine what's in the Table of Contents
+  - largest, most encapsulating header has one #
+  - second, slightly smaller header uses two ## 
+  - etc.
+- Bold
+  - use **two asterisks** to bold something
+- Italics
+  - use *one asterisk* to italicize something
+- Add a new line
+  - you need to add a double space at the end of a line of text.
+- Lists
+  1. can just
+  1. use the
+  1. number 1
+  1. and still get enumeration
+- Images: put an ! before[Name of Image](http or filepath of image)
+- Links: same as above but no !
+
+![Nova's Big Yawn](Week6/Images/BigYawn.jpeg)
+
+Code Chunks
+- insert code using:
+- Cmnd + Options + i
+```{r}
+# Now we are interacting with R in the same way we normally would
+
+# load libraries
+library(tidyverse)
+```
+
+```{r, message = FALSE, warning = FALSE}
+# will not show warnings or R messages when script runs. only show the clean output
+
+# include = FALSE prevents code and results from showing up 
+# eval = FALSE excludes the code chunk
+# echo = FALSE prevents code but not results from appearing in the finished file
+# message = FALSE prevents messages from showing
+# fig.cap = "..." adds a figure caption
+# there are others as well
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, # ALWAYS show the code
+                      warning = FALSE) # NEVER show the warnings
+```
+  
+```{r}
+# Today's Totally awesome R package
+library(beepr)
+#beep(5)
+#beep(8)
+```
+
+
+
