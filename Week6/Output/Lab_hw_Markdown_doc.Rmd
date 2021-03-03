@@ -1,0 +1,98 @@
+---
+title: "Homework Markdown Document"
+author: "Danielle Barnas and Group 1"
+date: "3/3/2021"
+output: 
+  prettydoc::html_pretty:
+    theme: hpstr
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+# Introduction
+This document will display figures and information from submarine groundwater data taken in Hawaii by Dr. Nyssa Silbiger and her team.
+
+# Load Libraries
+```{r}
+library(tidyverse)
+library(here)
+library(kableExtra)
+library(PNWColors)
+```
+
+# Data Analysis
+
+### Bring in data
+
+**Load data with read_csv**
+```{r LoadData}
+chem<-read_csv(here("Week6","Data","sgd_chem_data_HI.csv"))
+```
+
+### Create Table showing SGD parameters by Site
+
+**Round decimals for mean and standard error**
+```{r ChemTidy}
+chem$Value_mean<-round(chem$Value_mean, digits = 3) # 3 decimal places
+chem$Value_se<-round(chem$Value_se, digits = 2) # 2 decimal places
+```
+
+**Tidy data and create table**
+```{r ChemTable}
+chem_table<-chem %>% 
+  unite(col = 'Mean +/- s.e.', Value_mean, Value_se, sep = " +/- ") %>% # combine mean and se columns
+  select(-c(Value_variance, Value_sd)) %>%  # remove unnecessary columns
+  pivot_wider(names_from = Site, values_from = 'Mean +/- s.e.') %>% # one column per site
+  rename('Black Point  (mean +/- s.e.)' = BP, 'Wailupe  (mean +/- s.e.)' = W) %>%  # rename column headers
+  mutate(Tide = ifelse(Tide == "High", "High Tide", "Low Tide")) %>% # relabel high and low tides
+  select(-Variables) %>%  # remove variables column; will label variables below
+  rename(Variables = Tide) %>% # rename tide column; variable names will be added later
+  kbl(caption = "Table of measured SGD parameters at Black Point and Wailupe") %>% # create table with title
+  kable_classic_2() %>% # format table style
+  kable_styling(fixed_thead = T) %>% 
+  pack_rows(index = c("Nitrate+Nitrite"=2, # label variables above each set of High and Low Tide
+                      "% SGD"=2, 
+                      "pH"=2, 
+                      "Phosphate"=2, 
+                      "Salinity"=2, 
+                      "Silicate"=2, 
+                      "TA"=2, 
+                      "Temperature in situ"=2),
+            label_row_css = "background-color: #89689d; color: #fff;") # set background color (consistent with PNW scale in plot) for row headers 
+chem_table
+```
+
+### Create Figure showing SGD parameters by Site
+
+**Tidy data and create plot**
+```{r ChemPlot, fig.align = "center"}
+pal<-pnw_palette("Starfish", 2) # set color palette for figure
+
+chem_plot<-chem %>% 
+  select(-(Value_variance:Value_se)) %>% # only retain mean values and standard error
+  pivot_wider(names_from = Variables, values_from = Value_mean) %>% # pivot wider by variables
+  rename('Nitrate+Nitrite' = NN, '% SGD' = percent_sgd, Temperature = Temp_in) %>% # rename col headings
+  pivot_longer(cols = 'Nitrate+Nitrite':Temperature, names_to = "Variables", values_to = "MeanVal") %>% # retain temp as its own col
+  ggplot(aes(x = Tide,
+             y = MeanVal,
+             color = Site,
+             fill = Site)) + 
+  geom_col(position = "dodge", size = 0.4) +
+  theme_bw() +
+  labs(title = "Figure of mean SGD parameters at high and low tide",
+       subtitle = "Locations: Black Point and Wailupe",
+       y = "Mean Parameter Values",
+       x = "Tide",
+       caption = "Source: Lubarsky et al. 2018") +
+  theme(axis.title = element_text(size = 14), axis.text = element_text(size = 12)) +
+  scale_color_manual(values = pal) +
+  scale_fill_manual(values = pal) +
+  facet_wrap(~Variables, scales = "free")
+chem_plot  
+```
+

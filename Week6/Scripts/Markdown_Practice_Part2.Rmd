@@ -1,0 +1,106 @@
+---
+title: "Practicing with RMarkdown, Part 2"
+author: "Danielle Barnas"
+date: "3/3/2021"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    theme: journal
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE, # the code will be displayed throughout doc
+                      message = FALSE, # messages will not be displayed throughout doc
+                      warning = FALSE, # warnings will not be displayed throughout doc
+                      fig.path = "../Output/") # change figure path for all figures in doc
+```
+
+# Introduction
+Today, we will use **Palmer Penguins** to manipulate figures in *RMarkdown*.  
+We are using the "journal" theme.  
+- Other themes can be found [here](https://www.datadreaming.org/post/r-markdown-theme-gallery/)
+
+# Load Libraries
+
+```{r}
+library(tidyverse)
+library(here)
+library(palmerpenguins)
+library(kableExtra)
+library(memer) # today's totally awesome R package
+```
+
+**Figure options:**  
+- out.width = "70%"
+ - change plot size to 70% the normal size (or whatever relative size you want)  
+- fig.width
+ - figure width in "inches"  
+- fig.height
+ - figure height in "inches"  
+- fig.align = "center"
+ - location for figure in the document  
+- fig.asp = 1.2
+ - change the aspect ratio  
+- fig.cap = "some caption"
+ - figure caption where "the caption goes in quotes"  
+- fig.path = " "
+ - because our current file is saved in Scripts, fig.path would automatically save in Scripts, but to save in a different folder, use "../Folder/" where the ../ goes up one folder in the directory.  
+
+**We can also label a code chunk by putting a name after the r and before the comma**  
+- Good practice to give all our code chunks a different name  
+- Can never have a repeated name, else we will get an error  
+- If you are saving the figure, the code chunk name will be the name of the figure or figures.  
+
+# Make a plot
+
+```{r PengFig, out.width="80%", fig.align="center", fig.cap="This is a figure of penguin flippers", fig.path = "../Output/", echo = FALSE}
+PenguinFigure<-penguins %>% 
+  ggplot(aes(x = species, y = flipper_length_mm, colour = island)) + 
+  geom_boxplot()
+
+PenguinFigure
+```
+
+# Make a table
+
+| Time | Session | Topic |
+|:-----|:-------:|------:|
+| _left_ | _center_ | _right_ |
+| 01:00  | 1       | Anatomy |
+| 01:50  |         | *Break* |
+| 02:00  | 2       | Tables  |
+| 02:45  |         | *Break* |
+
+Line one contains table headers  
+Line two separates table headers from table contents  
+- Colon indicates alignment: left = left, left and right = center, right = right  
+
+```{r}
+# create a crude table
+penguins %>% 
+  group_by(species) %>% 
+  summarise(billmean = mean(bill_length_mm, na.rm = TRUE)) %>% 
+  kbl() %>%  # tidy up the table
+  kable_classic() %>%  # adds nice thick lines, slightly more journal quality
+  row_spec(2, # can do some specific command to a specific row (in this case, row 2)
+           bold = TRUE, # bold text
+           color = "white", # text color is white
+           background = "red") # highlight color is red
+```
+
+Today's Totally Awesome R Package  
+- [memer](https://github.com/sctyner/memer/)
+
+```{r}
+library(memer)
+meme_get("DistractedBf") %>% 
+  meme_text_distbf("Silly R package", "BIOL 551 students", "actual coding")
+
+meme_get("DosEquisMan") %>% 
+  meme_text_top("I don't always like coding", size = 28) %>% 
+  meme_text_bottom("But when I do\nIt's always today's totally awesome R package", size = 18)
+```
+
+
+
