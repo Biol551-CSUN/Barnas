@@ -3,9 +3,11 @@ title: "Homework Markdown Document"
 author: "Danielle Barnas and Group 1"
 date: "3/3/2021"
 output: 
-  prettydoc::html_pretty:
-    theme: hpstr
+  github_document:
     toc: true
+    html_preview: true
+    keep_html: true
+always_allow_html: yes
 ---
 
 ```{r setup, include=FALSE, fig.path = "../Output/"}
@@ -55,6 +57,7 @@ chem_table<-chem %>%
   kbl(caption = "Table of measured SGD parameters at Black Point and Wailupe") %>% # create table with title
   kable_classic_2() %>% # format table style
   kable_styling(fixed_thead = T) %>% 
+  row_spec(row = 0, bold = T, background = "#89689d", color = "#fff") %>%  # header specifications
   pack_rows(index = c("Nitrate+Nitrite"=2, # label variables above each set of High and Low Tide
                       "% SGD"=2, 
                       "pH"=2, 
@@ -63,7 +66,7 @@ chem_table<-chem %>%
                       "Silicate"=2, 
                       "TA"=2, 
                       "Temperature in situ"=2),
-            label_row_css = "background-color: #89689d; color: #fff;") # set background color (consistent with PNW scale in plot) for row headers 
+            label_row_css = "background-color: #e69b99; color: #363434;") # set background color (consistent with PNW scale in plot) for row headers 
 chem_table
 ```
 
@@ -78,6 +81,7 @@ chem_plot<-chem %>%
   pivot_wider(names_from = Variables, values_from = Value_mean) %>% # pivot wider by variables
   rename('Nitrate+Nitrite' = NN, '% SGD' = percent_sgd, Temperature = Temp_in) %>% # rename col headings
   pivot_longer(cols = 'Nitrate+Nitrite':Temperature, names_to = "Variables", values_to = "MeanVal") %>% # retain temp as its own col
+  mutate(Site = ifelse(Site == "BP", "Black Point", "Wailupe")) %>% 
   ggplot(aes(x = Tide,
              y = MeanVal,
              color = Site,
@@ -89,7 +93,7 @@ chem_plot<-chem %>%
        y = "Mean Parameter Values",
        x = "Tide",
        caption = "Source: Lubarsky et al. 2018") +
-  theme(axis.title = element_text(size = 14), axis.text = element_text(size = 12)) +
+  theme(axis.title = element_text(size = 14), axis.text = element_text(size = 10)) +
   scale_color_manual(values = pal) +
   scale_fill_manual(values = pal) +
   facet_wrap(~Variables, scales = "free")

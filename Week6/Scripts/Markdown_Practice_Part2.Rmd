@@ -94,6 +94,7 @@ Today's Totally Awesome R Package
 
 ```{r}
 library(memer)
+# meme's automatically save
 meme_get("DistractedBf") %>% 
   meme_text_distbf("Silly R package", "BIOL 551 students", "actual coding")
 
