@@ -1,0 +1,152 @@
+---
+title: "Week 7 Map Practice"
+author: "Danielle Barnas"
+date: "3/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, # ALWAYS show the code
+                      warning = FALSE, # NEVER show the warnings
+                      message = FALSE) # NEVER show messages
+```
+
+# Load Libraries
+```{r}
+# Load Libraries
+library(tidyverse)
+library(here)
+library(maps)
+library(mapdata)
+library(mapproj)
+```
+
+
+# Bring in Data
+```{r}
+## Bring in Data
+# data on population in California by county
+popdata<-read_csv(here("Week7","Data","CApopdata.csv"))
+# data on number of seastars at different field sites
+stars<-read_csv(here("Week7","Data","stars.csv"))
+```
+
+
+# {maps} Package
+map_data("location") is the function used to pull out whatever base layer that you want  
+```{r}
+## {maps} package
+# get data fro the entire world
+world<-map_data("world")
+head(world)
+
+usa<-map_data("usa") # creates a polygon at the country level
+head(usa)
+
+italy<-map_data("italy")
+head(italy)
+
+states<-map_data("state") # create polygons at state level
+head(states)
+
+counties<-map_data("county") # creates polygons at the county level
+head(counties)
+
+```
+
+
+# Structure of data
+- group: very important for ggplot to know how to structure the map  
+  - in the map_data data frame there is a group number for the different polygons that are meant to stay together  
+  - otherwise there's just a bunch of weird lines
+
+
+# Make a map of the world
+- can use different projections to view the map  
+  - https://rdrr.io/cran/mapproj/man/mapproject.html  
+```{r}
+# absolute basic
+ggplot()+
+  geom_polygon(data = world, aes(x = long, y = lat, group = group))
+
+# with additions
+ggplot() +
+  geom_polygon(data = world, 
+               aes(x = long, 
+                   y = lat, 
+                   group = group,
+                   fill = region), # fill in colours of map by region
+               color = "black") + # colour outside of aes because not manipulating the data, just making outlines black
+  theme_minimal() + # gets rid of box around the figure
+  guides(fill = F) +
+  theme(panel.background = element_rect(fill = "lightblue")) + # changes background panel to be light blue. element_rect is the rectangular element
+  coord_map(projection = "mercator", # also showed "sinusoidal"
+            xlim = c(-180,180)) # specific about using the whole world, but not outside those limits
+```
+
+
+# Make a map of California
+```{r}
+CA_data<-states %>% 
+  filter(region == "california")
+head(CA_data)
+```
+
+## Think, Pair, Share
+- Make a simple map of just california
+```{r}
+CA_data<-states %>% 
+  filter(region == "california")
+
+ggplot() +
+  geom_polygon(data = CA_data, 
+               aes(x = long, 
+                   y = lat, 
+                   group = group), # fill in colours of map by region
+               color = "black") + # colour outside of aes because not manipulating the data, just making outlines black
+  theme_void() + # just the map and nothing else (removes lat and long)
+  guides(fill = F) +
+  theme(panel.background = element_rect(fill = "lightblue")) + 
+  coord_map()  # "albers" is good for California
+```
+
+# Adding multiple layers of data
+```{r}
+CApop_county<- popdata %>% 
+  select("subregion" = County, Population) %>% # rename and select relevant columns
+  inner_join(counties) %>% # join popdata to counties
+  filter(region == "california") # only want CA data
+```
+
+# Map of CA population by county
+```{r}
+ggplot() +
+  geom_polygon(data = CApop_county,
+               aes(x = long,
+                   y = lat,
+                   group = group,
+                   fill = Population),
+               color = "black") + 
+  geom_point(data = stars, #add a point at seastar sampling locations
+             aes(x = long,
+                 y = lat,
+                 size = star_no)) + # the size of the point relates to the numebr of seastars found at each location
+  coord_map() +
+  #coord_map(projection = "albers",parameters = c(-38, 118)) + 
+  theme_void() + 
+  scale_fill_gradient(trans = "log10") + # change to the fill gradient. transformed to log10. Colors are more easily distinguishable 
+  labs(size = "# stars/m2") + # clean up legend
+  ggsave(here("Week7","Output","CApop.pdf"))
+```
+
+
+Today's Totally Awesome R Package
+```{r}
+library(spongebob)
+
+tospongebob("No this is Patrick")
+
+spongebobsay(what = "No this is Patrick")
+```
+
+

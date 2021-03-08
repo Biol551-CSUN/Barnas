@@ -1,0 +1,85 @@
+---
+title: "Week 7 Monday Lab - Trees of San Francisco"
+author: "Danielle Barnas and Group 1"
+date: "3/8/2021"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+# Load Libraries
+```{r}
+library(tidyverse)
+library(tidytuesdayR)
+library(here)
+library(maps)
+library(mapdata)
+library(mapproj)
+```
+
+
+# Bring in Data
+```{r}
+rm(list = ls())
+# Tidy Tuesday Data: Week 5, 2020
+sf_trees <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-28/sf_trees.csv')
+head(sf_trees)
+```
+
+
+# Set mapping parameters
+```{r}
+county<-map_data("county") # creates polygons at the county level
+head(county)
+
+SF_map<-county %>% 
+  filter(subregion == "san francisco")
+
+sf_data<-sf_trees %>% 
+  filter(latitude < 40 & # remove points outside of San Francisco
+         longitude > -125) %>% 
+  filter(species == "Sequoia sempervirens :: Coast Redwood") %>%  # focus on Coast Redoods
+  mutate(longitude = longitude + 0.03, 
+         latitude = latitude - 0.0055) %>% 
+  drop_na(legal_status)
+# I believe the lat and long data are skewed. this moves data points just off of water bodies, back onto a land mass
+
+```
+
+# Map Tree Data
+```{r}
+ggplot() +
+  geom_polygon(data = SF_map, 
+               aes(x = long, 
+                   y = lat, 
+                   group = group),
+               fill = "#FFFFFF", # county fill color
+               color = "black") + # black border
+  geom_point(data = sf_data,
+             aes(x = longitude,
+                 y = latitude,
+                 shape = legal_status), # indicator shape by legal status
+             color = "chartreuse4", # marker color
+             alpha = 0.5, # transparency 50%
+             size = 3) + # marker size
+  theme_minimal() +
+  guides(fill = F) +
+  theme(panel.background = element_rect(fill = "#99CCFF"), # plot background color
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + # remove grid lines from map background
+  coord_map() +  # default: "mercator" ; "albers" is good for California
+  labs(y = "Latitude",
+       x = "Longitude",
+       title = "Map of Coastal Redwood trees in San Francisco County",
+       subtitle = "Trees marked by property or legal status",
+       shape = "Status") +
+  ggsave(here("Week7","Output","SFtrees_homework.pdf"))
+```
+
+
