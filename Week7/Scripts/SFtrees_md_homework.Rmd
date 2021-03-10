@@ -60,7 +60,7 @@ ggplot() +
                aes(x = long, 
                    y = lat, 
                    group = group),
-               fill = "#FFFFFF", # county fill color
+               fill = "tan", # county fill color
                color = "black") + # black border
   geom_point(data = sf_data,
              aes(x = longitude,
