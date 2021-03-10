@@ -1,0 +1,98 @@
+---
+title: "ggmaps and ggsn"
+author: "Danielle Barnas"
+date: "3/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+Load Libraries and register Google API
+```{r}
+rm(list=ls())
+
+library(ggmap)
+library(tidyverse)
+library(here)
+library(ggsn)
+
+register_google(key = "")
+```
+
+Bring in data and get map base layer
+```{r}
+chemdata<-read_csv(here("Week7","Data","chemicaldata_maunalua.csv"))
+glimpse(chemdata)
+
+# Get map
+Oahu<-get_map("Oahu")
+
+# Map it
+ggmap(Oahu)
+
+# Get coordinates for Wailupe on Oahu
+# Make a data frame of lon and lat coordinates
+WP<-data.frame(lon = -157.7621, lat = 21.27427) # coordinates for wailupe
+
+# Get base layer
+Map1<-get_map(WP)
+
+# Zoom in
+Map1<-get_map(WP,zoom = 17)
+
+# Plotting the map
+ggmap(Map1)
+```
+
+
+Mapping but make it fancy
+```{r}
+# Fancy mapping
+# Change map type
+Map1<-get_map(WP,zoom = 17, maptype = "satellite") # r "watercolor"
+
+ggmap(Map1) +
+  geom_point(data = chemdata,
+             aes(x = Long, 
+                 y = Lat, 
+                 color = Salinity),
+             size = 2) +
+  scale_color_viridis_c() +
+  scalebar(x.min = -157.766, x.max = -157.758, # set boundary limits of map
+           y.min = 21.2715, y.max = 21.2785,
+           dist = 250, dist_unit = "m", model = "WGS84", # scale length and units # standard model for most GPS's
+           transform = TRUE, st.color = "white", # transform = TRUE: give scale reference on map # st.color: scale text color
+           box.fill = c("yellow", "white")) # scale fill color, no idea what second color indicates
+```
+
+
+geocode: when you don't know the exact lat and long
+```{r}
+# If you don't know the exact lat and long
+# anything you would type into google to search, you can type in to the geocode to get coordinates
+geocode("the white house")
+geocode("California State University, Northridge")
+
+geocode(c("the white house", "California State University, Northridge"))
+```
+
+
+Today's Totally Awesome R Package
+```{r}
+library(emojifont)
+search_emoji('smile') # see what's available
+
+ggplot() + 
+  geom_emoji('smile_cat', # plot using emojis
+             x=1:5, y=1:5, 
+             size=10)
+```
+
+
+Lab Assignment: Good Plot v Bad Plot
+- Go through the online guides Nyssa has on canvas on what makes a good plot and do the opposite
+- Clean code, bad plot
