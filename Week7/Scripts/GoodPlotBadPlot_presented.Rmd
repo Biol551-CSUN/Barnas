@@ -44,7 +44,6 @@ library(ggrgl)
 library(ggiraph)
 library(devout)
 library(devoutrgl)
-
 ```
 
 
@@ -59,14 +58,12 @@ head(plastics)
 
 **Analyze and Graph Data**
 
-```{r, fig.height=20, fig.width=20}
+```{r, fig.height=17, fig.width=20}
 # Set color palette
 pal<-pnw_palette("Shuksan")
 
 # pivot longer by plastic types
 plastics.long<-plastics %>% 
-  # rename(HDPE = "hdpe", LDPE = "ldpe", Other = "o",
-  #        PET = "pet", PP = "pp", PS = "ps", PVC = "pvc") %>% 
   filter(year == 2019) %>% 
   filter(parent_company == "Grand Total") %>% # remove subcategories; only retain totals
   filter(grand_total > 0) %>% # remove empty categories
@@ -75,33 +72,37 @@ plastics.long<-plastics %>%
   mutate(percentage = counts/grand_total) %>% 
   select(country, source, percentage)
   
-
 # isolate the top 4 countries and the US
 plastics.long<-plastics.long %>% 
   filter(country == "Taiwan_ Republic of China (ROC)" |
-          country == "NIGERIA" |
           country == "Philippines" |
           country == "Indonesia" |
-          country == "United States of America") #%>% 
-  #drop_na()
+          country == "United States of America")
 
+# pie charts
 ggplot(plastics.long,
                 aes(x="", y=percentage, fill=source)) +
   geom_bar(stat="identity", width=1) +
   coord_polar("y", start=0) +
-  labs(title = "Total Recorded Plastic Pollution Counted in 2019") +
+  labs(title = "platics") +
   scale_fill_manual(values = pal) +
-  facet_wrap(~country) +
-  theme(
-        axis.text.x = element_text(size = 24),
-        axis.text.y = element_text(size = 10),
+  facet_wrap(~country, ncol = 2) +
+  theme(axis.text.x = element_text(size = 24),
+        axis.text.y = element_text(size = 24),
         panel.grid.major = element_line(colour = "black"),
         panel.grid.minor = element_line(colour = "black"),
         panel.background = element_rect(colour = pal[2], fill = pal[2]))
 
-
 ```
-
+**Problems**  
+- Legend too small  
+- X-Axis text too small  
+- Labels on graphs themselves not present  
+- Background color is the same as one of the pie chart colors  
+- Unnecessary axis lines and labels  
+- Title is small and vague  
+- Colors used are very similar to each other, not easy to discern at a glance  
+- One of the top countries only has one type of plastic represented  
 
 # Good plot
 
@@ -144,7 +145,7 @@ good.plot<-ggplot(plastics.long.2,
    coord_flip()
 
 x <- girafe(ggobj = good.plot)
-girafe_options(x, opts_hover(),
+girafe_options(x, opts_hover(reactive = TRUE),
                opts_zoom(min = .5, max = 4))
 
 
