@@ -8,7 +8,7 @@ output:
     toc_float: true
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, fig.path = "Week7/Output/"}
 knitr::opts_chunk$set(echo = TRUE,
                       warning = FALSE,
                       message = FALSE)
@@ -58,7 +58,7 @@ head(plastics)
 
 **Analyze and Graph Data**
 
-```{r, fig.height=17, fig.width=20}
+```{r Bad_Plot, fig.height=17, fig.width=20}
 # Set color palette
 pal<-pnw_palette("Shuksan")
 
@@ -91,7 +91,8 @@ ggplot(plastics.long,
         axis.text.y = element_text(size = 24),
         panel.grid.major = element_line(colour = "black"),
         panel.grid.minor = element_line(colour = "black"),
-        panel.background = element_rect(colour = pal[2], fill = pal[2]))
+        panel.background = element_rect(colour = pal[2], fill = pal[2])) +
+  ggsave(here("Week7","Output","Bad_Plot.pdf"))
 
 ```
 **Problems**  
@@ -107,7 +108,7 @@ ggplot(plastics.long,
 # Good plot
 
 **Analyze and Graph Data**
-```{r, fig.height=30, fig.width=15, fig.align='left'}
+```{r Good_Plot, fig.height=30, fig.width=20, fig.align='left'}
 plastics.long.2<-plastics %>% 
   filter(parent_company == "Grand Total") %>% # only keep country grand totals
   filter(grand_total > 0) %>% 
@@ -142,11 +143,13 @@ good.plot<-ggplot(plastics.long.2,
          axis.text = element_text_interactive(size = 6),
          panel.grid.major = element_blank(),
          panel.grid.minor = element_blank()) +
-   coord_flip()
+   coord_flip()+
+   ggsave(here("Week7","Output","Good_Plot_stagnant.pdf"))
 
 x <- girafe(ggobj = good.plot)
 girafe_options(x, opts_hover(reactive = TRUE),
                opts_zoom(min = .5, max = 4))
+
 
 
 ```
