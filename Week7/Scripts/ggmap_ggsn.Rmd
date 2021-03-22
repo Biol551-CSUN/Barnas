@@ -93,6 +93,6 @@ ggplot() +
 ```
 
 
-Lab Assignment: Good Plot v Bad Plot
-- Go through the online guides Nyssa has on canvas on what makes a good plot and do the opposite
-- Clean code, bad plot
+Lab Assignment: Good Plot v Bad Plot  
+- Go through the online guides Nyssa has on canvas on what makes a good plot and do the opposite  
+- Clean code, bad plot  

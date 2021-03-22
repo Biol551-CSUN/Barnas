@@ -1,0 +1,155 @@
+---
+title: "Good Plot v Bad Plot Lab"
+author: "Danielle Barnas"
+date: "3/10/2021"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+# Instructions:
+
+Due March 22
+
+Your homework is to create two versions of similar plots, using any dataset you choose. You must create the plots using ggplot2, post-processing with Adobe Illustrator or similar is not allowed. This homework is a contest, and the winner will win a prize to be disclosed.
+
+Please submit your homework by posting a markdown document containing the plots, the code you used to create them, and your discussion of the plot within the markdown doc to github. Data also needs to be submitted.
+
+The first plot should be as bad as possible. Your reading from Claus Wilke’s and Healy's textbook describe the many ways that a plot cab become misleading, difficult to interpret, or or just plain ugly, and you should use all of the tools that you can. Please try to make me, a person who cares a great deal about high-quality data visualization, cry.
+
+You should explain in text all of the ways in which the bad plot is bad. Bullet points are fine, but clearly articulate each principle of data visualization that you have broken.
+
+The second plot should be based on the same or similar data to the first plot, but it should be good. Write briefly about why this is a successful plot.
+
+Rules:  
+- All plots must be made in ggplot2, with code visible in the Rmarkdown document.
+- The data must be visible.
+- The good plot and the bad plot should be based on the same, or similar, data.
+- Results will be posted on Twitter.
+
+# Load Libraries
+```{r}
+library(tidyverse)
+library(here)
+library(PNWColors)
+library(rgl)
+library(ggrgl)
+library(ggiraph)
+library(devout)
+library(devoutrgl)
+
+```
+
+
+**Read in Data**
+```{r}
+rm(list = ls())
+plastics <- read_csv(here("Week7","Data","plastics.csv"))
+head(plastics)
+```
+
+# Bad Plot
+
+**Analyze and Graph Data**
+
+```{r, fig.height=10, fig.width=20}
+# Set color palette
+pal<-pnw_palette("Shuksan")
+
+# pivot longer by plastic types
+plastics.long<-plastics %>% 
+  rename(HDPE = "hdpe", LDPE = "ldpe", Other = "o",
+         PET = "pet", PP = "pp", PS = "ps", PVC = "pvc") %>% 
+  filter(year == 2019) %>% 
+  filter(parent_company == "Grand Total") %>% # remove subcategories; only retain totals
+  filter(grand_total > 0) %>% # remove empty categories
+  arrange(desc(grand_total)) %>%  # Filter by grand_total to identify top 4 countries with greatest recorded plastic pollution
+  pivot_longer(cols = c(HDPE:PVC), names_to = "source", values_to = "counts") %>%  # plastic counts in long format
+  mutate(percentage = counts/grand_total) %>% 
+  select(country, source, percentage)
+  
+
+# isolate the top 4 countries and the US
+plastics.long<-plastics.long %>% 
+  filter(country == "Taiwan_ Republic of China (ROC)" |
+          country == "NIGERIA" |
+          country == "Philippines" |
+          country == "Indonesia" |
+          country == "United States of America") #%>% 
+  #drop_na()
+
+# Use `geom_bar_z()`
+pie.plot<-ggplot(plastics.long, 
+       aes(x="", y=percentage, fill=source, z = percentage)) +
+  geom_bar_z(width = 1, na.rm = TRUE, stat = "identity", extrude = TRUE) +
+  coord_polar("y", start=0) +
+  theme_ggrgl() +
+  labs(title = "Total Recorded Plastic Pollution Counted in 2019") +
+  scale_fill_manual(values = pal) +
+  facet_wrap(~country)
+
+# Render Plot in 3d with {devoutrgl}
+devoutrgl::rgldev(fov = 30, view_angle = -30)
+pie.plot
+invisible(dev.off())
+
+```
+
+
+# Good plot
+
+**Analyze and Graph Data**
+```{r, fig.height=30, fig.width=15, fig.align='left'}
+plastics.long.2<-plastics %>% 
+  filter(parent_company == "Grand Total") %>% # only keep country grand totals
+  filter(grand_total > 0) %>% 
+  rename(HDPE = "hdpe", LDPE = "ldpe", Other = "o",
+         PET = "pet", PP = "pp", PS = "ps", PVC = "pvc") %>% 
+  pivot_longer(cols = c(HDPE:PVC), # all plastic types in one column, except for grand total
+               names_to = "source", 
+               values_to = "num_collected") %>% 
+  filter(year == 2019) %>% 
+  filter(country != "EMPTY")
+
+# Set color palette
+pal2<-pnw_palette("Bay",7)
+
+good.plot<-ggplot(plastics.long.2,
+       aes(x = reorder(country, grand_total),
+           y = num_collected,
+           colour = source,
+           fill = source,
+           tooltip = source, data_id = source)) +
+  geom_col_interactive(stat = "identity", colour = "black") + 
+  scale_fill_manual_interactive(values = pal2) +
+  scale_color_manual_interactive(values = pal2) +
+  theme_bw() +
+  labs(x = "Country",
+       y = "Recorded Counted Plastic",
+       title = "Total Recorded Plastic Pollution",
+       subtitle = "Counted in 2019",
+       fill = "Plastic Type",
+       colour = "Plastic Type") +
+   theme(legend.position=c(.85,.3), # place legend inside the plot
+         axis.text = element_text_interactive(size = 6),
+         panel.grid.major = element_blank(),
+         panel.grid.minor = element_blank()) +
+   coord_flip()
+
+x <- girafe(ggobj = good.plot)
+girafe_options(x, opts_hover(),
+               opts_zoom(min = .5, max = 4))
+
+
+```
+
+
+
+
