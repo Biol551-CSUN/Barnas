@@ -1,0 +1,127 @@
+---
+title: "Lab - Creating functions"
+author: "Danielle Barnas"
+date: "3/24/2021"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+
+# Assignment:  
+Use any of the datasets that we have used in class and make two useful functions. One that is a plot and one that is not. Turn in your functions using RMarkdown with at least 2 examples each showing its flexibility. Due, as always, at 9am on Monday.
+
+
+# Load Libraries
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+library(PNWColors)
+library(ggalt)
+library(here)
+```
+
+
+# Glimpse Data
+```{r}
+glimpse(penguins)
+```
+
+
+# Create function (no plot)
+```{r}
+# Create function for some biomass:length ratio
+BM_ratio <- function(data, body_mass, length) {
+  ratio <- data %>% 
+    mutate(body_mass_ratio = {{body_mass}} / {{length}}) %>%  # create new ratio column
+    relocate(body_mass_ratio, .before = {{body_mass}}) # move from end of dataframe so it doesn't get cut off in the output
+  return(ratio)
+}
+```
+
+### Test function
+```{r}
+# body mass / bill length ratio
+BM_ratio(data = penguins, body_mass = body_mass_g, length = bill_length_mm)
+
+# body mass / flipper length ratio
+BM_ratio(data = penguins, body_mass = body_mass_g, length = flipper_length_mm)
+```
+
+
+# Create function (plot)
+```{r}
+myplot<-function(data, x, y, group){ # set variables
+  group_distinct<- data %>% #isolate distinct variables in the group
+    distinct({{group}})
+  pal<-pnw_palette("Sunset2", nrow(group_distinct)) # color palette for plot, nrow gives number of distinct variables in the group
+  data<-data %>% 
+    drop_na({{group}}) # remove na values from the chosen group
+  ggplot(data, # assign dataframe
+         aes(x = {{x}}, y = {{y}}, # assign variables
+             color = {{group}}, # color points by group
+             fill = {{group}}, # fill circles behind points
+             shape = {{group}})) + # each group variable has a different shape
+    geom_point() + # scatter plot
+    geom_encircle(alpha = 0.2, show.legend = FALSE) + # circle data with shaded background
+    scale_color_manual(values = pal) + # set palette
+    scale_fill_manual(values = pal) + # set palette
+    theme_bw() +
+    theme(axis.title = element_text(size = 12),
+          axis.text = element_text(size = 10),
+          legend.title = element_text(size = 12),
+          legend.text = element_text(size = 10))
+}
+```
+
+### Test function
+```{r}
+myplot(data = penguins, 
+       x = body_mass_g, 
+       y = bill_length_mm,
+       group = species)
+```
+
+### Test function with add-ons:
+
+### Example 1
+```{r}
+myplot(data = penguins, 
+       x = body_mass_g, 
+       y = bill_length_mm,
+       group = species) +
+  labs(x = "Body mass (g)",
+       y = "Bill length (mm)",
+       title = "Palmer penguin body mass and bill length distribution by species") +
+  ggsave(here("Week8","Output","Lab_function_plot_Ex1.pdf"), width = 7, height = 7)
+```
+
+### Example 2
+```{r}
+myplot(data = penguins, 
+       x = body_mass_g, 
+       y = flipper_length_mm,
+       group = island) +
+  labs(x = "Body mass (g)",
+       y = "Flipper length (mm)",
+       title = "Palmer penguin body mass and bill length distribution by island") +
+  ggsave(here("Week8","Output","Lab_function_plot_Ex2.pdf"), width = 7, height = 7)
+```
+
+
+
+
+
+
+
+
+
+
+
