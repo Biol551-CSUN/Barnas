@@ -1,0 +1,212 @@
+---
+title: "Creating Package "mooreasgd""
+author: "Danielle Barnas"
+date: "3/25/2021"
+output: 
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+
+# Creating the framework for my package
+
+Use 'roxygen2' package for documenting my functions  
+- Create a folder wtih the same name as my package with 4 files inside the folder:  
+  1. DESCRIPTION - where all the metadata about my package goes  
+  1. mooreasgd.Rproj - RStudio specific file  
+  1. NAMESPACE - indicates what needs to be exposed to users for my R package  
+  1. R - where all the R code goes  
+```{r, eval=FALSE}
+install.packages('roxygen2')
+devtools::create("mooreasgd")
+```
+
+
+# DESCRIPTION file
+
+Create an R file that has the same name as the function I want in it
+
+My files include:  
+- CT_cleanup  
+- WL_cleanup  
+- pH_cleanup
+
+Example:  Create a file called R/pH_cleanup.R with the following  
+```{r, eval=FALSE}
+pH_cleanup <- function(path, pH_serial, recursive_tf = FALSE) {
+  
+  # list all csv file names in the folder and subfolders
+  file.names.Cal<-basename(list.files(path, pattern = c(pH_serial,"csv$", recursive = recursive_tf)))
+  
+  # read all csv files at the file path, skipping 1 line of metadata
+  pHLog <- file.names.Cal %>%
+    purrr::map_dfr(~ readr:::read_csv(file.path(path, .), skip=2, col_names=T))
+  
+  # clean file: only select useful columns, create serial# column, rename columns
+  pHLog<-pHLog %>% 
+    dplyr::select(contains('Date'), contains(Serial), contains("temp"), mV, pH) %>%
+    dplyr::mutate(Serial=paste0("pH_",Serial)) %>%
+    dplyr::rename(date=contains("Date"),
+           TempInSitu=contains("Temp")) %>% 
+    tidyr::drop_na()
+  
+  return(pHLog)
+}
+```
+
+Can be helpful to group together related functions.  
+- Put all the cleanup functions together in one R file R/cleanup.R  
+- Need to add the @export tag above the function to indicate this function to be "exposed" to users for use  
+  - the #' @export syntax ensures that the pH_cleanup() function gets added to the NAMESPACE when I run devtools::document()
+
+Example:
+```{r, eval=FALSE}
+#' @export
+pH_cleanup <- function(path, pH_serial, recursive_tf = FALSE) {
+  
+  # list all csv file names in the folder and subfolders
+  file.names.Cal<-basename(list.files(path, pattern = c(pH_serial,"csv$", recursive = recursive_tf)))
+  
+  # read all csv files at the file path, skipping 1 line of metadata
+  pHLog <- file.names.Cal %>%
+    purrr::map_dfr(~ readr:::read_csv(file.path(path, .), skip=2, col_names=T))
+  
+  # clean file: only select useful columns, create serial# column, rename columns
+  pHLog<-pHLog %>% 
+    dplyr::select(contains('Date'), contains(Serial), contains("temp"), mV, pH) %>%
+    dplyr::mutate(Serial=paste0("pH_",Serial)) %>%
+    dplyr::rename(date=contains("Date"),
+           TempInSitu=contains("Temp")) %>% 
+    tidyr::drop_na()
+  
+  return(pHLog)
+}
+```
+
+
+
+## External Dependencies
+
+My function depends on functions within the tidyverse and lubridate packages  
+- Notice I indicated the package before each use of a dependent function
+
+**NEVER USE library() OR requires() IN AN R PACKAGE!**
+
+To use an external package, I need to add this information to my DESCRIPTION file under the imports content  
+- To include multiple dependencies, use a comma after one and then add the next on a new line
+```{r, eval=FALSE}
+Imports:
+  tidyverse
+```
+or
+```{r, eval=FALSE}
+Imports:
+  readr,
+  dplyr,
+  tidyr,
+  purrr
+```
+
+## Documenting my functions
+
+Leverage off the roxygen2 which provides a very simple way of documenting my functions and then produces man/pH_cleanup.Rd files which is what we see when we go ?pH_cleanup
+
+Example:
+```{r, eval=FALSE}
+#' Clean up raw pH data file from the HOBO pH Logger
+#'
+#' This function loads a raw pH file. It searches a directory for the correct logger's serial number, 
+#' plucks out the correct file or files and stacks all related files into one loaded csv.
+#' It removes the first two rows of each relevant file containing logger information, then retains column headers.
+#' Unnecessary columns are removed, and the remaining columns are renamed as needed for simplicity and consistency.
+#' Any rows containing NA's are dropped.
+#'
+#' @param path Path to the input files
+#' @param pH_serial Logger serial number used in naming the input file
+#' @param recursive_tf Logical parameter indicating whether to search within folders at the file path. Default = FALSE
+#' @return A cleaned dataframe of pH logger data
+#' @export
+pH_cleanup <- function(path, pH_serial, recursive_tf = FALSE) {
+  
+  # list all csv file names in the folder and subfolders
+  file.names.Cal<-basename(list.files(path, pattern = c(pH_serial,"csv$", recursive = recursive_tf)))
+  
+  # read all csv files at the file path, skipping 1 line of metadata
+  pHLog <- file.names.Cal %>%
+    purrr::map_dfr(~ readr:::read_csv(file.path(path, .), skip=2, col_names=T))
+  
+  # clean file: only select useful columns, create serial# column, rename columns
+  pHLog<-pHLog %>% 
+    dplyr::select(contains('Date'), contains(Serial), contains("temp"), mV, pH) %>%
+    dplyr::mutate(Serial=paste0("pH_",Serial)) %>%
+    dplyr::rename(date=contains("Date"),
+           TempInSitu=contains("Temp")) %>% 
+    tidyr::drop_na()
+  
+  return(pHLog)
+}
+```
+
+Once the documentation is completed, run
+```{r, eval=FALSE}
+devtools::document()
+```
+to generate the pH_cleanup.Rd file in the man folder.
+
+I will have one .Rd file for each function in my R package.  
+- Every time I add new documentation to my R function, I need to run the above command again to regenerate the .Rd files
+
+# Making vignettes
+
+Important to give people a high-level understanding of what my R package can do.
+```{r, eval=FALSE}
+usethat::use_vignette("introduction")
+```
+Creates a vignette/introduction.Rmd file.  
+- A vignette template Rmarkdown file that I can use to fill out steps on how to use my package.
+
+
+# How to install and use my R package
+
+Use the devtools::load_all() function to load the R package into memory exposing all the functions we highlighted above.  
+- However, as soon as I close my R session, the package will no longer be available.
+
+To install my package, use devtools::install() function to install the R package into my R systems library.  
+- Then I can load my package with library(mooreasgd)
+```{r, eval=FALSE}
+devtools::install("mooreasgd")
+library(mooreasgd)
+```
+
+
+# Distributing my R package
+
+I will distribute through GitHub, one of many avenues for distribution.  
+- Requires a set of core files to be committed:  
+  1. R/*.R files  
+  1. man/*.Rd files  
+  1. DESCRIPTION  
+  1. NAMESPACE  
+  
+Once I've committed all those files and pushed them to GitHub, anyone can install my package with the following command:
+```{r, eval=FALSE}
+devtools::install_github("dbarnas/mooreasgd")
+```
+
+
+
+
+
+
+
+
+
+
+
+
