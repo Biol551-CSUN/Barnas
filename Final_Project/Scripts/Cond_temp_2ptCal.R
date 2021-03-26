@@ -1,67 +1,64 @@
-# Two-point Conductivity Calibrations for the HOBO CT Loggers using raw data off of HOBOware
+##########################################################################
+##########################################################################
+#### Two-point Conductivity Calibration script for HOBO Conductivity-Temperature logger data
+#### Brings in raw .csv files by Serial number and exports a tidy file
 
-# https://hasenmuellerlab.weebly.com/uploads/3/1/8/7/31874303/2019_shaughnessy_et_al_ema.pdf
+#### Reference: # https://hasenmuellerlab.weebly.com/uploads/3/1/8/7/31874303/2019_shaughnessy_et_al_ema.pdf
 
-# created: 9-23-2020 by Danielle Barnas
-# modified: 9-29-2020
+# Author: Danielle Barnas
+# created: 9-23-2020
+# modified: 3-25-2021
 
-#### Conductivity Calibration for Drift #####
+##########################################################################
+##########################################################################
 
-rm(list=ls())
+
+########################
+### Load Libraries
+########################
 
 library(tidyverse)
 library(lubridate)
 library(gsw)
+library(mooreasgd)
 library(here)
 
-source(here("Final_Project","Scripts","Define_Functions.R"))
-
-
-###################################
-# File Paths and Serial Numbers
-###################################
-
-file.date<-'0118-2021' # Date in the logger file's name
-serial<-'343' # CT Probe Serial Number
-
-condCal<-read_csv(paste0("Data/Cond_temp/Calibration/Full_Cal_",serial,".csv"))%>%
-  select(-'#')%>%
-  mutate(Serial=serial)
-#cal.date<-'010921' # Date of logger calibration or Name of Full Calibration File
+rm(list=ls())
 
 ###################################
-# File Paths and Serial Numbers
+### Serial, Date, and File Paths
 ###################################
 
-file.date<-'0118-2021' # Date in the logger file's name
-serial<-'324' # CT Probe Serial Number
-
-condCal<-read_csv(paste0("Data/Cond_temp/Calibration/Full_Cal_",serial,".csv"))%>%
-  select(-'#')%>%
-  mutate(Serial=serial)
-#cal.date<-'010921' # Date of logger calibration or Name of Full Calibration File
+# CT Probe Serial Number
+Serial<-'354'
+# Log date
+log.date<- '2021-01-18'
+# Path to folder storing logger .csv files
+path.cal<-here("Final_Project","Data") # Calibration file path
+path.log<-here("Final_Project","Data") # Logged in situ file path
 
 ###################################
-# Date and Time
+### Launch and Retrieval Times
 ###################################
-### Maintain date time format "YYYY-MM-DD HH:MM:SS"
+
+# "YYYY-MM-DD HH:MM:SS"
 
 # HIGH CALIBRATION POINT
-# Date of pre-deployment calibrations
-startHigh1<-'2021-01-18 06:23:00' # Y-M-D H:M:S Calibration for One-Point Cal (50.0 mS/cm)
+# Pre-deployment calibration
+startHigh1<-'2021-01-18 06:23:00'
 endHigh1<-'2021-01-18 06:29:00'
 
-# Date of post-deployment calibrations
-startHigh2<-'2021-01-20 13:03:00' # Y-M-D H:M:S Calibration for One-Point Cal (50.0 mS/cm)
+# Post-deployment calibration
+startHigh2<-'2021-01-20 13:03:00'
 endHigh2<-'2021-01-20 13:07:00'
 
 # LOW CALIBRATION POINT
-# Date of pre-deployment calibrations
-startLow1<-'2021-01-18 06:32:00' # Y-M-D H:M:S Calibration for One-Point Cal (50.0 mS/cm)
+# Pre-deployment calibration
+startLow1<-'2021-01-18 06:32:00'
 endLow1<-'2021-01-18 06:40:00'
 
-# Date of post-deployment calibrations
-startLow2<-'2021-01-20 13:23:00' # Y-M-D H:M:S Calibration for One-Point Cal (50.0 mS/cm)
+# Post-deployment calibration
+startLow2<-'2021-01-20 13:23:00'
 endLow2<-'2021-01-20 13:32:00'
 
 # common garden
@@ -72,24 +69,35 @@ CGend<-'2021-01-18 08:05:00'
 Launch<-'2021-01-18 11:30:00'
 Retrieval<-'2021-01-20 11:00:00'
 
+
 ###################################
-# Conductivity Calibration Standards and Logging Interval
+### Conductivity Calibration Standards and Logging Interval
 ###################################
 
 # Two-Point Calibration Standards
-refLow<-1413 # uS/cm ; ThermoScientific Orion Application Solution: 1413 uS/cm at 25degC Conductivity Standard
-refHigh<-50000 # uS/cm ; ThermoScientific Orion Application Solution: 12.9 mS/cm at 25degC Conductivity Standard
+# Low Value
+refLow<-1413 # uS/cm at 25deg C
+# High Value
+refHigh<-50000 # uS/cm at 25deg C
+
+# In Situ Recording Interval
+int<-10 #seconds
 
 ###################################
-# Pressure data
+### Pressure data
 ###################################
+
 # COMMENT OUT ONE OF THE FOLLOWING
 
 ### If pairing with Pressure/Depth Logger data
-Serial.depth<-'877' # Serial number of paired hobo pressure logger
+# (NOTE: Water Level data must first be calibrated and processed through HOBOware)
+Serial.depth<-'876' # Serial number of paired hobo pressure logger
+path.depth<-here("Final_Project","Data") # Water Level file path 
+
 
 ### If data were recorded at a consistent pressure (bar)
 #Pres_bar<-0
+
 
 #################################################################################
 # DO NOT CHANGE ANYTHING BELOW HERE ----------------------------------

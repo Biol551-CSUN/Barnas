@@ -1,9 +1,16 @@
+##########################################################################
+##########################################################################
+#### Pre-processing script for HOBO water level logger data
+#### Brings in calibrated .csv files by Serial number and exports a tidy file
 
+# Author: Danielle Barnas
+# created: 3-10-2020
+# modified: 3-25-2021
 
-# created: 3-10-2020 by Danielle Barnas
-# modified: 9-29-2020
+##########################################################################
+##########################################################################
 
-### BEFORE RUNNING SCRIPT
+### BEFORE RUNNING SCRIPT ###
 # Load HoboWare .hobo datafile in HoboWare software program
 # Select Series 1 and 2 for Measurements Abs Pres and Temp in kPa and degC, respectively
 # Deselect all events
@@ -15,50 +22,77 @@
 # Check that Series 3 for Water Level in meters is selected and click Plot
 # Export file into your dated data folder (path below)
 
-rm(list=ls())
+##########################################################################
+##########################################################################
+
+########################
+### Load Libraries
+########################
 
 library(tidyverse)
 library(lubridate)
+library(mooreasgd)
 library(here)
 
-source(here("Final_Project","Scripts","Define_Functions.R"))
-
+rm(list=ls())
 
 ########################
-# File Names
+### Serial, Date, and File Path
 ########################
 
+# water level probe serial number
 Serial<-'876'
+# Log date
+log.date<- '2021-01-18'
+# Path to folder storing logger .csv files
+path.Log<-here("Final_Project","Data")
+
+########################
+### Launch and Retrieval Times
+########################
+
+# "YYYY-MM-DD HH:MM:SS"
 
 # Date of in situ logs
-Launch<-'2021-01-18 09:00:00' # Maintain date time format "YYYY-MM-DD HH:MM:SS"
-Retrieval<-'2021-01-18 13:20:00' # Maintain date time format "YYYY-MM-DD HH:MM:SS"
+Launch<-'2021-01-18 09:00:00'
+Retrieval<-'2021-01-18 13:20:00'
 
 
 #################################################################################
 # DO NOT CHANGE ANYTHING BELOW HERE ----------------------------------
 #################################################################################
 
+########################
 ### Read in Logger Files
-path.Log<-here("Final_Project","Data")
+########################
 
+# cleanup function pulled from 'mooreasgd' package
+# Reads in raw csv and returns tidied csv for the probe with the specified serial number
 depthLog<-WL_cleanup(path = path.Log, wl_serial = Serial)
 
-# Parse date filters into date and type vector types
+########################
+### Parse date and time
+########################
+
+# Parse launch and retrieval dates into date and type vector types
 Launch<-Launch %>% parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
 Retrieval<-Retrieval %>% parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
 
-# Filter out dates
+########################
+### Filter by date and time
+########################
 depthLog<-depthLog%>%filter(between(date,Launch,Retrieval)) 
 
-# write file
-write_csv(depthLog,paste0(here("Final_Project","Output"),'/depth_',Serial,'_',Sys.Date(),'.csv'))
+########################
+# Write CSV file and graph data
+########################
 
+write_csv(depthLog,paste0(here("Final_Project","Output"),'/depth_',Serial,'_',log.date,'.csv'))
 
-# Plot the data
-data.pres %>% # this is the dataframe
+# Plotting
+depthLog %>%
   ggplot(aes(x= date, y= TempInSitu))+   #setup plot with x and y data
   geom_line()
-data.pres %>% # this is the dataframe
+depthLog %>% 
   ggplot(aes(x= date, y= -Depth))+   #setup plot with x and y data
   geom_line()

@@ -1,51 +1,50 @@
-# One-point Conductivity Calibrations for the HOBO CT Loggers using raw data off of HOBOware
+##########################################################################
+##########################################################################
+#### One-point Conductivity Calibration script for HOBO Conductivity-Temperature logger data
+#### Brings in raw .csv files by Serial number and exports a tidy file
 
-# https://hasenmuellerlab.weebly.com/uploads/3/1/8/7/31874303/2019_shaughnessy_et_al_ema.pdf
+#### Reference: # https://hasenmuellerlab.weebly.com/uploads/3/1/8/7/31874303/2019_shaughnessy_et_al_ema.pdf
 
-# created: 9-23-2020 by Danielle Barnas
-# modified: 1-13-2021
+# Author: Danielle Barnas
+# created: 9-23-2020
+# modified: 3-25-2021
 
-#### Conductivity Calibration for Drift #####
+##########################################################################
+##########################################################################
 
-rm(list=ls())
+###################################
+### Load Libraries
+###################################
 
 library(tidyverse)
 library(lubridate)
 library(gsw)
+library(mooreasgd)
 library(here)
 
-source(here("Final_Project","Scripts","Define_Functions.R"))
+rm(list=ls())
 
 
 ###################################
-# File Paths and Serial Numbers
+### Serial, Date, and File Paths
 ###################################
 
+# CT Probe Serial Number
+Serial<-'354'
+# Log date
+log.date<- '2021-01-18'
+# Path to folder storing logger .csv files
 path.cal<-here("Final_Project","Data") # Calibration file path
 path.log<-here("Final_Project","Data") # Logged in situ file path
-path.depth<-here("Final_Project","Data") # Water Level file path
 
-Serial<-'354' # CT Probe Serial Number
 
 ###################################
-# Pressure data
+### Launch and Retrieval Times
 ###################################
 
-# COMMENT OUT ONE OF THE FOLLOWING
+# "YYYY-MM-DD HH:MM:SS"
 
-### If pairing with Pressure/Depth Logger data
-Serial.depth<-'876' # Serial number of paired hobo pressure logger
-
-### If data were recorded at a consistent pressure (bar)
-#Pres_bar<-0
-
-###################################
-# Date and Time
-###################################
-
-### Maintain date time format "YYYY-MM-DD HH:MM:SS"
-
-# Date of initial calibrations
+# Date of calibrations
 startCal1<-'2021-01-18 06:24:50'
 endCal1<-'2021-01-18 06:31:00'
 
@@ -54,22 +53,41 @@ Launch<-'2021-01-18 08:00:00'
 Retrieval<-'2021-01-18 11:30:00'
 
 ###################################
-# Conductivity Calibration Standards and Logging Interval
+### Conductivity Calibration Standards and Logging Interval
 ###################################
 
 # One-Point Calibration Standard
-oneCal<-50000 # uS/cm
+oneCal<-50000 # uS/cm at 25deg C
 
 # In Situ Recording Interval
 int<-10 #seconds
+
+###################################
+### Pressure data
+###################################
+
+# COMMENT OUT ONE OF THE FOLLOWING
+
+### If pairing with Pressure/Depth Logger data
+# (NOTE: Water Level data must first be calibrated and processed through HOBOware)
+Serial.depth<-'876' # Serial number of paired hobo pressure logger
+path.depth<-here("Final_Project","Data") # Water Level file path 
+
+
+### If data were recorded at a consistent pressure (bar)
+#Pres_bar<-0
+
 
 #################################################################################
 # DO NOT CHANGE ANYTHING BELOW HERE ----------------------------------
 #################################################################################
 
 ############################################################
-############################################################
 ### Read in and Calibration and Logger Files
+############################################################
+
+# cleanup function pulled from 'mooreasgd' package
+# Reads in raw csv and returns tidied csv for the probe with the specified serial number
 
 # Conductivity Calibration files
 condCal<-CT_cleanup(path = path.cal, ct_serial = Serial)
@@ -77,36 +95,54 @@ condCal<-CT_cleanup(path = path.cal, ct_serial = Serial)
 # In Situ Conductivity files
 condLog<-CT_cleanup(path = path.log, ct_serial = Serial)
 
-# Parse date filters into date and type vector types
+############################################################
+### Parse date and time
+############################################################
+
+# Parse launch and retrieval dates into date and type vector types
+# Calibration
 startCal1<-startCal1%>%parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
 endCal1<-endCal1%>%parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
+# Logs in situ
 Launch<-Launch %>% parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
 Retrieval<-Retrieval %>% parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
 
-# Filter out dates
-condCal<-condCal%>%filter(between(date,startCal1,endCal1)) 
-condLog<-condLog%>%filter(between(date,Launch,Retrieval)) 
-CT.data<-union(condCal,condLog) # Join Calibration and Logged files
 
 ############################################################
+### Filter by date and time
 ############################################################
-# Load Pressure Data from HOBO Pressure Loggers for In Situ Practical Salinity Calculations
+
+# Calibration
+condCal<-condCal%>%filter(between(date,startCal1,endCal1)) 
+# Logs in situ
+condLog<-condLog%>%filter(between(date,Launch,Retrieval)) 
+# Join Calibration and Logged files
+CT.data<-union(condCal,condLog) 
+
+############################################################
+### Load Pressure Data from HOBO Water Level Loggers
+############################################################
+
+# Required for In Situ Practical Salinity Calculations
 if(exists('Serial.depth')) {
-  data.pres<-WL_cleanup(path = path.depth, wl_serial = Serial.depth)
+  data.pres<-WL_cleanup(path = path.depth, wl_serial = Serial.depth) # reads and tidies data
   data.pres<-data.pres%>%
     dplyr::filter(between(date,Launch,Retrieval))%>%
     dplyr::rename(Serial.depth=Serial,TempInSitu.depth=TempInSitu)%>%
     dplyr::mutate(AbsPressure_bar=AbsPressure*0.01) # convert kPa to Bar (conversion: 1 kPa = 0.01 Bar)
 } else {
-  data.pres<-tibble::tibble(date=CT.data$date, AbsPressure_bar=Pres_bar)
+  data.pres<-tibble::tibble(date=CT.data$date, AbsPressure_bar=Pres_bar) # creates a dataframe with Pressure column = 0
 }
 
-CT.data<-CT.data%>% # amend to larger dataframe
+# Join Pressure data to CT dataframe
+CT.data<-CT.data%>%
   left_join(data.pres,by='date')
 
 ############################################################
+### One Point Calibration
 ############################################################
-# One Point Calibration
+
+# Slope for 50000 uS/cm
 Cond_Reference<-1060*mean(condCal$TempInSitu)+23500
 Cal_Measure<-mean(condCal$E_Conductivity)
 offset<-Cond_Reference-Cal_Measure
@@ -119,10 +155,12 @@ CT.data<-CT.data%>%
   mutate(SalinityInSitu_1pCal=gsw_SP_from_C(C = Sp_Cond_mS.cm, t = TempInSitu, p=AbsPressure_bar)) # Use PSS-78 Equations for Salinity calculation
 
 ############################################################
+### Write CSV file and graph data
 ############################################################
-# Write CSV file and graph data
-write_csv(CT.data,paste0(here("Final_Project","Output"),'/CT_',Serial,'_',Sys.Date(),'.csv'))
 
+write_csv(CT.data,paste0(here("Final_Project","Output"),'/CT_',Serial,'_',log.date,'.csv'))
+
+# Plotting
 CT.data%>%
   filter(between(date,Launch,Retrieval))%>%
   ggplot(aes(x=date,y=TempInSitu))+
