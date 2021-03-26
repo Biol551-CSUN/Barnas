@@ -83,7 +83,7 @@ path.depth<-here("Final_Project","Data") # Water Level file path
 #################################################################################
 
 ############################################################
-### Read in and Calibration and Logger Files
+### Read in Calibration and Logger Files
 ############################################################
 
 # cleanup function pulled from 'mooreasgd' package
@@ -116,8 +116,12 @@ Retrieval<-Retrieval %>% parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = chara
 condCal<-condCal%>%filter(between(date,startCal1,endCal1)) 
 # Logs in situ
 condLog<-condLog%>%filter(between(date,Launch,Retrieval)) 
+
 # Join Calibration and Logged files
 CT.data<-union(condCal,condLog) 
+
+# Offset time if necessary
+#CT.data$date<-CT.data$date - seconds(5) 
 
 ############################################################
 ### Load Pressure Data from HOBO Water Level Loggers
@@ -158,7 +162,7 @@ CT.data<-CT.data%>%
 ### Write CSV file and graph data
 ############################################################
 
-write_csv(CT.data,paste0(here("Final_Project","Output"),'/CT_',Serial,'_',log.date,'.csv'))
+write_csv(CT.data,paste0(here("Final_Project","Output"),'/CT_',Serial,'_1pt_',log.date,'.csv'))
 
 # Plotting
 CT.data%>%
