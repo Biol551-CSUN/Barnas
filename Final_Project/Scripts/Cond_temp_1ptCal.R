@@ -3,7 +3,8 @@
 #### One-point Conductivity Calibration script for HOBO Conductivity-Temperature logger data
 #### Brings in raw .csv files by Serial number and exports a tidy file
 
-#### Reference: # https://hasenmuellerlab.weebly.com/uploads/3/1/8/7/31874303/2019_shaughnessy_et_al_ema.pdf
+#### Reference: https://hasenmuellerlab.weebly.com/uploads/3/1/8/7/31874303/2019_shaughnessy_et_al_ema.pdf
+#### Reference: https://www.aqion.de/site/112
 
 # Author: Danielle Barnas
 # created: 9-23-2020
@@ -19,6 +20,7 @@
 library(tidyverse)
 library(lubridate)
 library(gsw)
+# devtools::install_github("dbarnas/mooreasgd") # if package has updated since last run
 library(mooreasgd)
 library(here)
 
@@ -26,31 +28,50 @@ rm(list=ls())
 
 
 ###################################
-### Serial, Date, and File Paths
+### File Paths
+###################################
+
+### Input
+# Path to folder storing logger .csv files
+path.cal<-here("Final_Project","Data","20210326") # Calibration file path
+path.log<-here("Final_Project","Data","20210329") # Logged in situ file path
+
+### Output
+# Path to store logger files
+path.output<-here("Final_Project","Output","20210329") # Output file path
+
+###################################
+### Serial number and Date
 ###################################
 
 # CT Probe Serial Number
-Serial<-'354'
-# Log date
-log.date<- '2021-01-18'
-# Path to folder storing logger .csv files
-path.cal<-here("Final_Project","Data") # Calibration file path
-path.log<-here("Final_Project","Data") # Logged in situ file path
+Serial<-'344'
 
+# Log date
+log.date<- '2021-03-26'
 
 ###################################
 ### Launch and Retrieval Times
 ###################################
 
-# "YYYY-MM-DD HH:MM:SS"
+### "YYYY-MM-DD HH:MM:SS"
 
 # Date of calibrations
-startCal1<-'2021-01-18 06:24:50'
-endCal1<-'2021-01-18 06:31:00'
+# Pre-deployment calibration
+startCal1<-'2021-03-26 15:15:00'
+endCal1<-'2021-03-26 15:31:00'
+
+# Post-deployment calibration
+startCal2<-'2021-03-26 15:15:00'
+endCal2<-'2021-03-26 15:31:00'
+
+# Common Garden
+CGstart<-'2021-03-26 15:39:00'
+CGend<-'2021-03-28 20:15:00'
 
 # Date of in situ logs
-Launch<-'2021-01-18 08:00:00'
-Retrieval<-'2021-01-18 11:30:00'
+Launch<-'2021-03-26 15:39:00'
+Retrieval<-'2021-03-28 20:15:00'
 
 ###################################
 ### Conductivity Calibration Standards and Logging Interval
@@ -58,9 +79,6 @@ Retrieval<-'2021-01-18 11:30:00'
 
 # One-Point Calibration Standard
 oneCal<-50000 # uS/cm at 25deg C
-
-# In Situ Recording Interval
-int<-10 #seconds
 
 ###################################
 ### Pressure data
@@ -70,12 +88,12 @@ int<-10 #seconds
 
 ### If pairing with Pressure/Depth Logger data
 # (NOTE: Water Level data must first be calibrated and processed through HOBOware)
-Serial.depth<-'876' # Serial number of paired hobo pressure logger
-path.depth<-here("Final_Project","Data") # Water Level file path 
+# Serial.depth<-'877' # Serial number of paired hobo pressure logger
+# path.depth<-here("Final_Project","Data") # Water Level file path 
 
 
 ### If data were recorded at a consistent pressure (bar)
-#Pres_bar<-0
+Pres_bar<-1
 
 
 #################################################################################
@@ -84,15 +102,18 @@ path.depth<-here("Final_Project","Data") # Water Level file path
 
 ############################################################
 ### Read in Calibration and Logger Files
+### Temperature compensation (source: https://www.aqion.de/site/112)
 ############################################################
 
 # cleanup function pulled from 'mooreasgd' package
 # Reads in raw csv and returns tidied csv for the probe with the specified serial number
 
 # Conductivity Calibration files
+#condCal<-CT_roundup(data.path = path.cal, ct.serial = Serial, tf_write = FALSE)
 condCal<-CT_cleanup(path = path.cal, ct_serial = Serial)
 
 # In Situ Conductivity files
+#condLog<-CT_roundup(data.path = path.log, ct.serial = Serial, tf_write = FALSE)
 condLog<-CT_cleanup(path = path.log, ct_serial = Serial)
 
 ############################################################
@@ -103,6 +124,13 @@ condLog<-CT_cleanup(path = path.log, ct_serial = Serial)
 # Calibration
 startCal1<-startCal1%>%parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
 endCal1<-endCal1%>%parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
+startCal2<-startCal2%>%parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
+endCal2<-endCal2%>%parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
+
+# Common Garden
+CGstart<-CGstart%>%parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
+CGend<-CGend%>%parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
+
 # Logs in situ
 Launch<-Launch %>% parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
 Retrieval<-Retrieval %>% parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = character(),locale = default_locale(), trim_ws = TRUE)
@@ -113,9 +141,10 @@ Retrieval<-Retrieval %>% parse_datetime(format = "%Y-%m-%d %H:%M:%S", na = chara
 ############################################################
 
 # Calibration
-condCal<-condCal%>%filter(between(date,startCal1,endCal1)) 
+condCal<-condCal%>%filter(between(date,startCal1,endCal1)|between(date,startCal2,endCal2)) 
+
 # Logs in situ
-condLog<-condLog%>%filter(between(date,Launch,Retrieval)) 
+condLog<-condLog%>%filter(between(date,CGstart,CGend)|between(date,Launch,Retrieval))
 
 # Join Calibration and Logged files
 CT.data<-union(condCal,condLog) 
@@ -131,7 +160,7 @@ CT.data<-union(condCal,condLog)
 if(exists('Serial.depth')) {
   data.pres<-WL_cleanup(path = path.depth, wl_serial = Serial.depth) # reads and tidies data
   data.pres<-data.pres%>%
-    dplyr::filter(between(date,Launch,Retrieval))%>%
+    dplyr::filter(between(date,CGstart,CGend)|between(date,Launch,Retrieval))%>%
     dplyr::rename(Serial.depth=Serial,TempInSitu.depth=TempInSitu)%>%
     dplyr::mutate(AbsPressure_bar=AbsPressure*0.01) # convert kPa to Bar (conversion: 1 kPa = 0.01 Bar)
 } else {
@@ -142,38 +171,89 @@ if(exists('Serial.depth')) {
 CT.data<-CT.data%>%
   left_join(data.pres,by='date')
 
+# Add calibration Abs Pressure = 1 bar
+condCal<-CT.data%>%
+  filter(between(date,startCal1,endCal1)|between(date,startCal2,endCal2)) %>% 
+  mutate(AbsPressure_bar = 1)
+condLog<-CT.data %>% 
+  filter(between(date,CGstart,CGend)|between(date,Launch,Retrieval))
+
+# Join all dataframes with Abs Pressure
+CT.data<-full_join(condCal,condLog)
+
+
 ############################################################
 ### One Point Calibration
 ############################################################
 
-# Slope for 50000 uS/cm
-Cond_Reference<-1060*mean(condCal$TempInSitu)+23500
-Cal_Measure<-mean(condCal$E_Conductivity)
-offset<-Cond_Reference-Cal_Measure
+# Logger data in pre-deployment calibration
+preCal<-CT.data%>%
+  filter(between(date,startCal1,endCal1))%>%
+  summarise(mean(Sp_Conductance))%>%
+  as.numeric
+
+offset<-oneCal-preCal
 
 CT.data<-CT.data%>%
-  mutate(Sp_Conductance=E_Conductivity+offset)
+  mutate(Sp_Conductance_cal=Sp_Conductance+offset)
+
+
+############################################################
+### Apply drift calculation
+### Only required for long deployments
+############################################################
+
+# # Logger data in pre-deployment calibration
+# preCal<-CT.data%>%
+#   filter(between(date,startCal1,endCal1))%>%
+#   summarise(mean(Sp_Conductance))%>%
+#   as.numeric
+# # Logger data in post-deployment calibration
+# postCal<-CT.data%>%
+#   filter(between(date,startCal2,endCal2))%>%
+#   summarise(mean(Sp_Conductance))%>%
+#   as.numeric()
+
+# # Drift between high calibration readings
+# drift.off<-preCal-postCal
+# # Drift correction factor
+# drift.corr=drift.off/length(condLog$date)
+# 
+# condLog<-CT.data%>%
+#   filter(between(date,CGstart,CGend)|between(date,Launch,Retrieval))%>%
+#   arrange(date)%>%
+#   mutate(drift.correction.new=drift.corr)%>% # establish a column filled with the drift correction value
+#   mutate(drift.correction=cumsum(drift.correction.new))%>% # fill the drift correction column with sequentially larger drift corrections from correlation value to full drift
+#   select(-drift.correction.new)%>%
+#   mutate(Sp_Conductance.calDrift = Sp_Conductance_cal + drift.correction)
+# condCal1b<-CT.data%>%
+#   filter(between(date,startCal1,endCal1))%>%
+#   mutate(Sp_Conductance.calDrift = Sp_Conductance_cal)
+# condCal2b<-CT.data%>%
+#   filter(between(date,startCal2,endCal2))%>%
+#   mutate(Sp_Conductance.calDrift = Sp_Conductance_cal + drift.off)
+# condCal<-union(condCal1b,condCal2b) # Join calibration files together
+# CT.data<-full_join(condCal,condLog) # Join Calibration and Logged files
+
+############################################################
+### Calculate Salinity using gsw package for the PSS-78 equation
+############################################################
 
 CT.data<-CT.data%>%
-  mutate(Sp_Cond_mS.cm=Sp_Conductance*0.001)%>% # Sp_Conductance in mS/cm
-  mutate(SalinityInSitu_1pCal=gsw_SP_from_C(C = Sp_Cond_mS.cm, t = TempInSitu, p=AbsPressure_bar)) # Use PSS-78 Equations for Salinity calculation
+  mutate(SalinityInSitu_1pCal=gsw_SP_from_C(C = Sp_Conductance_cal*0.001, t = 25, p=AbsPressure_bar)) # Use PSS-78 Equations for Salinity calculation
 
 ############################################################
 ### Write CSV file and graph data
 ############################################################
 
-write_csv(CT.data,paste0(here("Final_Project","Output"),'/CT_',Serial,'_1pt_',log.date,'.csv'))
+write_csv(CT.data,paste0(path.output,'/CT_',Serial,'_1ptCal_',log.date,'.csv'))
 
 # Plotting
-CT.data%>%
-  filter(between(date,Launch,Retrieval))%>%
-  ggplot(aes(x=date,y=TempInSitu))+
-  geom_line()
 
 CT.data%>%
   filter(between(date,Launch,Retrieval))%>%
-  filter(SalinityInSitu_1pCal>25)%>% # to ignore outliers
-  ggplot(aes(x=date,y=SalinityInSitu_1pCal))+
+  #filter(SalinityInSitu_1pCal>25)%>% # to ignore outliers
+  ggplot(aes(x=date,y=SalinityInSitu_1pCal, color = TempInSitu))+
   geom_line()
 
 

@@ -3,7 +3,8 @@
 #### Two-point Conductivity Calibration script for HOBO Conductivity-Temperature logger data
 #### Brings in raw .csv files by Serial number and exports a tidy file
 
-#### Reference: # https://hasenmuellerlab.weebly.com/uploads/3/1/8/7/31874303/2019_shaughnessy_et_al_ema.pdf
+#### Reference: https://hasenmuellerlab.weebly.com/uploads/3/1/8/7/31874303/2019_shaughnessy_et_al_ema.pdf
+#### Reference: https://www.aqion.de/site/112
 
 # Author: Danielle Barnas
 # created: 9-23-2020
@@ -190,7 +191,7 @@ CT.data<-full_join(condCal,condLog)
 ### Nonlinear Temperature Compensation
 ############################################################
 
-# # source: https://www.aqion.de/site/112#:~:text=The%20electrical%20conductivity%20(EC)%20of,the%20reference%20temperature%20at%2025.
+# source: https://www.aqion.de/site/112
 CT.data<-CT.data %>%
   mutate(A = (1.37023 * (TempInSitu - 20)) + 8.36 * (10^(-4) * ((TempInSitu - 20)^2))) %>%
   mutate(B = 109 + TempInSitu) %>%

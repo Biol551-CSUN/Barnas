@@ -5,7 +5,8 @@
 ################################################################
 ################################################################
 
-### Create a function for cleaning CT HOBO logger data from a raw csv exported from HOBOware
+### Create a function for cleaning CT HOBO logger data 
+### from a raw csv exported from HOBOware
 ### Created by Danielle Barnas
 ### Created on 2021-March-8
 
@@ -37,7 +38,64 @@ condCal$date <- condCal$date %>%
 ################################################################
 ################################################################
 
-### Create a function for cleaning Water Level/Pressure/Depth HOBO logger data from a calibrated csv exported from HOBOware
+### Create a function for cleaning multiple HOBO CT logger data files
+### from a raw csv exported from HOBOware
+### Created by Danielle Barnas
+### Created on 2021-March-26
+
+CT_roundup<-function(data.path, output.path, tf_write, tf_recursive = FALSE){
+  
+  path<-data.path
+  
+  file.names.Cal<-basename(list.files(path, pattern = c("csv$", recursive = tf_recursive))) #list all csv file names in the folder and subfolders
+  
+  for(i in 1:length(file.names.Cal)) {
+    Data_ID<-file.names.Cal[[i]]
+    
+    file.names<-basename(list.files(path, pattern = c(Data_ID, "csv$", recursive = tf_recursive))) #list all csv file names in the folder and subfolders
+    
+    condCal <- file.names %>%
+      purrr::map_dfr(~ readr::read_csv(file.path(path, .), skip=1, col_names=T)) # read all csv files at the file path, skipping 1 line of metadata
+    
+    condCal<-condCal %>% 
+      dplyr::select(contains('Date'), contains("High Range"), contains("Temp")) %>% # Filter specified probe by Serial number
+      dplyr::mutate(List.ID=Data_ID) %>%  # add column for CT serial number
+      dplyr::rename(date=contains("Date"),
+                    TempInSitu=contains("Temp"),
+                    E_Conductivity=contains("High Range")) %>%
+      tidyr::drop_na() %>% 
+      tidyr::separate(col = 'file.id', into = c('file.id',NA), sep = ".csv", remove = T) # remove the '.csv'
+    
+    condCal$date <- condCal$date %>%
+      readr::parse_datetime(format = "%m/%d/%y %H:%M:%S %p", # Convert 'date' to date and time vector type
+                            na = character(),
+                            locale = default_locale(),
+                            trim_ws = TRUE)
+    
+    ############################################################
+    ### Nonlinear Temperature Compensation
+    ############################################################
+    
+    # https://www.aqion.de/site/112
+    condCal<-condCal %>%
+      mutate(A = (1.37023 * (TempInSitu - 20)) + 8.36 * (10^(-4) * ((TempInSitu - 20)^2))) %>%
+      mutate(B = 109 + TempInSitu) %>%
+      mutate(Sp_Conductance = 0.889 * (10^(A/B)) * E_Conductivity) %>% 
+      dplyr::select(-c(A,B))
+    
+    listofdfs[[i]] <- conCal # save your dataframes into the list
+    
+    if(tf_write == TRUE) {
+      write.csv(condCal, paste0(output.path,'/',Data_ID,'_SpConductance.csv'))
+    }
+  }
+}
+
+################################################################
+################################################################
+
+### Create a function for cleaning Water Level/Pressure/Depth HOBO logger data
+### from a calibrated csv exported from HOBOware
 ### Created by Danielle Barnas
 ### Created on 2021-March-8
 
@@ -68,7 +126,8 @@ WL_cleanup <- function(path, wl_serial, recursive_tf = FALSE) {
 }
 
 
-### Create a function for cleaning pH HOBO logger data from a raw csv exported from HOBOmobile (mobile app)
+### Create a function for cleaning pH HOBO logger data from a raw csv exported 
+### from HOBOmobile (mobile app)
 ### Created by Danielle Barnas
 ### Created on 2021-March-8
 
@@ -92,5 +151,93 @@ pH_cleanup <- function(path, pH_serial, recursive_tf = FALSE) {
   
   return(pHLog)
 }
+
+
+### Create a function for a one-point conductivity calibration
+### Created by Danielle Barnas
+### Created on 2021-March-26
+
+one_cal<-function(data, date, temp, EC, cal_reference, startCal, endCal) {
+  
+  ############################################################
+  ### One Point Calibration
+  ############################################################
+  
+  # Logger data in pre-deployment calibration
+  Cal.Log<-data%>%
+    filter(between({{date}},{{startCal}},{{endCal}}))%>%
+    summarise(mean(Sp_Conductance))%>%
+    as.numeric
+  
+  # Offset between the calibration reference and the logger reading
+  offset<-cal_reference-Cal.Log
+  
+  # Apply offset to logger data
+  data<-data%>%
+    mutate(Sp_Conductance_cal=Sp_Conductance+offset)
+
+  return(data)
+  }
+
+
+
+### Create a function for a two-point conductivity calibration
+### Created by Danielle Barnas
+### Created on 2021-March-26
+
+
+
+
+### Create a function for a logger drift
+### Created by Danielle Barnas
+### Created on 2021-March-26
+
+
+############################################################
+### Apply drift calculation
+### Only required for long deployments
+############################################################
+
+# # Logger data in pre-deployment calibration
+# preCal<-CT.data%>%
+#   filter(between(date,startCal1,endCal1))%>%
+#   summarise(mean(Sp_Conductance))%>%
+#   as.numeric
+# # Logger data in post-deployment calibration
+# postCal<-CT.data%>%
+#   filter(between(date,startCal2,endCal2))%>%
+#   summarise(mean(Sp_Conductance))%>%
+#   as.numeric()
+
+# # Drift between high calibration readings
+# drift.off<-preCal-postCal
+# # Drift correction factor
+# drift.corr=drift.off/length(condLog$date)
+# 
+# condLog<-CT.data%>%
+#   filter(between(date,CGstart,CGend)|between(date,Launch,Retrieval))%>%
+#   arrange(date)%>%
+#   mutate(drift.correction.new=drift.corr)%>% # establish a column filled with the drift correction value
+#   mutate(drift.correction=cumsum(drift.correction.new))%>% # fill the drift correction column with sequentially larger drift corrections from correlation value to full drift
+#   select(-drift.correction.new)%>%
+#   mutate(Sp_Conductance.calDrift = Sp_Conductance_cal + drift.correction)
+# condCal1b<-CT.data%>%
+#   filter(between(date,startCal1,endCal1))%>%
+#   mutate(Sp_Conductance.calDrift = Sp_Conductance_cal)
+# condCal2b<-CT.data%>%
+#   filter(between(date,startCal2,endCal2))%>%
+#   mutate(Sp_Conductance.calDrift = Sp_Conductance_cal + drift.off)
+# condCal<-union(condCal1b,condCal2b) # Join calibration files together
+# CT.data<-full_join(condCal,condLog) # Join Calibration and Logged files
+
+
+
+
+
+
+
+
+
+
 
 
