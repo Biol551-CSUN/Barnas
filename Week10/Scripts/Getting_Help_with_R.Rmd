@@ -1,0 +1,139 @@
+---
+title: "Getting Help with R"
+author: "Danielle Barnas"
+date: "4/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE)
+```
+
+
+## Googling
+- Use the package and function if known  
+- Put .R or R software to make more specific  
+- use 'dataframe' rather than 'spreadsheet'  
+- CRAN Task Views  
+  - can help you find a package through keywords if you don't know the package
+
+
+## Troubleshooting Script
+- Sleep!  
+- Look for red ex's on the side of code or red squiggly lines withitn your code, indicating syntax errors  
+- Many messages R will print to let you know the problem  
+  - Error: There's a fatal error in your code that prevented it from being run through successfully. You need to fix it for the code to run  
+  - Warning: non-fatal errors (don't stop code from running, but this is a potential problem)  
+  - Message: Just a note about your code  
+
+
+## Supportive R Communities
+- Stack Overflow  
+- Twitter  
+  - #Rstats
+
+## Helpful online guides
+- https://ivelasq.rbind.io/blog/other-geoms/#waffle-charts  
+- r-graph-gallery.com  
+- https://ivelasq.rbind.io/blog/other-geoms/#waffle-charts
+
+## Make a reproducible example to ask for help
+- Re: StackOverflow
+```{r}
+# install.packages('reprex') # reproducible example
+# install.packages('datapasta') # copy and paste
+# install.packages('styler') # copy and paste in style
+
+library(reprex)
+library(datapasta)
+library(styler)
+```
+
+
+### Reprex
+```{r, eval = FALSE}
+library(tidyverse)
+mpg %>%
+  ggplot(aes(x = displ, y = hwy))%>%
+  geom_point(aes(color = class))
+```
+1. Highlight code  
+1. Addins > reprex selection  
+1. Addins > render reprex...
+  1. Select Current Selection
+  1. Select a Target venue
+  1. Select Append session info and Preview HTML
+
+
+### Datapasta
+```{r, eval = FALSE}
+lat	long	star_no
+33.548	-117.805	10
+35.534	-121.083	1
+39.503	-123.743	25
+32.863	-117.24	22
+33.46	-117.671	8
+```
+
+```{r}
+tibble::tribble(
+    ~lat,    ~long, ~star_no,
+  33.548, -117.805,      10L,
+  35.534, -121.083,       1L,
+  39.503, -123.743,      25L,
+  32.863,  -117.24,      22L,
+   33.46, -117.671,       8L
+  )
+
+```
+
+1. copy and paste excel table data
+1. addins > Datapasta > Paste as tribble (or other format as relevant)
+
+
+
+### Do's and Don't of Reprex
+1. Use the smallest, simplest, most built-in data possible
+  1. e.g. using datapasta
+1. Include commands on a strict "need to run" basis
+  1. ruthlessly strip out anything unrelated to the specific matter at hand
+  1. Include every single command that is required, e.g. loading specific packages as needed
+1. Pack it in, pack it out, and don't take liberties with other people's computers. You are asking people to run this code!
+  1. Don't start with rm(list = ls()). It is anti-social to clobber other people's workspaces
+  1. Don't start with setwd() because it won't work on anyone else's computer
+  1. Don't mask built-in functions, i.e. don't define a new function named c or mean
+  1. If you create files, delete them when you're done
+1. Use good coding style, e.g. include comments
+1. Make sure you run your code first, don't fake it
+1. Should be easy for others to digest, so they don't necessariliy have to run it
+1. Should be easy for others to copy + paste + run, if and only if they so choose.
+
+
+## Totally awesome R package
+- ubeR
+  - call a ride through R
+  
+  
+## Lab:
+Create a simple code with an error(s)
+
+```{r, eval = FALSE}
+library(tidyverse)
+
+head(mtcars)
+
+ggplot(data = mtcars, aes(x = hp, y = mpg)) +
+  geom_point(color = cyl) +
+  geom_smooth(method = "lm") +
+  theme_bw() +
+  labs(x = "Horsepower", y = "MPG", color = "# Cylinders", 
+       title = "Scatter Plot of HP vs MPG") +
+  scale_color_viridis_d()
+```
+
+
+
+
+
+
