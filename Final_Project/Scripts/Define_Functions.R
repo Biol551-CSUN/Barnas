@@ -43,29 +43,42 @@ condCal$date <- condCal$date %>%
 ### Created by Danielle Barnas
 ### Created on 2021-March-26
 
-CT_roundup<-function(data.path, output.path, tf_write, tf_recursive = FALSE){
+CT_roundup<-function(data.path, output.path, ct.serial, tf_write, tf_recursive = FALSE){
   
-  path<-data.path
+  # Create a list of all files within the directory folder
+  file.names.Cal<-basename(list.files(data.path, pattern = c("csv$", recursive = tf_recursive))) #list all csv file names in the folder and subfolders
   
-  file.names.Cal<-basename(list.files(path, pattern = c("csv$", recursive = tf_recursive))) #list all csv file names in the folder and subfolders
+  # Create an empty dataframe to store all subsequent tidied df's into
+  full_df <- tibble::tibble(
+    date = as.POSIXct(NA),
+    List.ID = as.character(),
+    TempInSitu = as.numeric(),
+    E_Conductivity = as.numeric(),
+    Sp_Conductance = as.numeric())
   
+  # For each listed file:
+  ## Load the dataframe,
+  ## Tidy the data,
+  ## Create a column for temperature-compensated specific conductance, and
+  ## Export the new file to an output folder
   for(i in 1:length(file.names.Cal)) {
     Data_ID<-file.names.Cal[[i]]
     
-    file.names<-basename(list.files(path, pattern = c(Data_ID, "csv$", recursive = tf_recursive))) #list all csv file names in the folder and subfolders
+    file.names<-basename(list.files(data.path, pattern = c(Data_ID, "csv$", recursive = tf_recursive))) #list all csv file names in the folder and subfolders
     
     condCal <- file.names %>%
-      purrr::map_dfr(~ readr::read_csv(file.path(path, .), skip=1, col_names=T)) # read all csv files at the file path, skipping 1 line of metadata
+      purrr::map_dfr(~ readr::read_csv(file.path(data.path, .), skip=1, col_names=T)) # read all csv files at the file path, skipping 1 line of metadata
     
-    condCal<-condCal %>% 
-      dplyr::select(contains('Date'), contains("High Range"), contains("Temp")) %>% # Filter specified probe by Serial number
-      dplyr::mutate(List.ID=Data_ID) %>%  # add column for CT serial number
+    condCal<-condCal %>%
+      dplyr::select(contains('Date'), contains("High Range"), contains("Temp")) %>%
+      dplyr::mutate(List.ID=Data_ID) %>%  # add column for file ID
       dplyr::rename(date=contains("Date"),
                     TempInSitu=contains("Temp"),
                     E_Conductivity=contains("High Range")) %>%
-      tidyr::drop_na() %>% 
-      tidyr::separate(col = 'file.id', into = c('file.id',NA), sep = ".csv", remove = T) # remove the '.csv'
+      tidyr::drop_na() %>%
+      tidyr::separate(col = 'List.ID', into = c('List.ID',NA), sep = ".csv", remove = T) # remove the '.csv'
     
+    # Format date and time
     condCal$date <- condCal$date %>%
       readr::parse_datetime(format = "%m/%d/%y %H:%M:%S %p", # Convert 'date' to date and time vector type
                             na = character(),
@@ -78,18 +91,28 @@ CT_roundup<-function(data.path, output.path, tf_write, tf_recursive = FALSE){
     
     # https://www.aqion.de/site/112
     condCal<-condCal %>%
-      mutate(A = (1.37023 * (TempInSitu - 20)) + 8.36 * (10^(-4) * ((TempInSitu - 20)^2))) %>%
-      mutate(B = 109 + TempInSitu) %>%
-      mutate(Sp_Conductance = 0.889 * (10^(A/B)) * E_Conductivity) %>% 
+      dplyr::mutate(A = (1.37023 * (TempInSitu - 20)) + 8.36 * (10^(-4) * ((TempInSitu - 20)^2))) %>%
+      dplyr::mutate(B = 109 + TempInSitu) %>%
+      dplyr::mutate(Sp_Conductance = 0.889 * (10^(A/B)) * E_Conductivity) %>%
       dplyr::select(-c(A,B))
     
-    listofdfs[[i]] <- conCal # save your dataframes into the list
+    full_df <- full_df %>%
+      dplyr::full_join(condCal) # save your dataframes into a larger df
     
     if(tf_write == TRUE) {
       write.csv(condCal, paste0(output.path,'/',Data_ID,'_SpConductance.csv'))
     }
   }
+  
+  if(exists('ct.serial')) {
+    pattern <- grep(x = full_df$List.ID, pattern = ct.serial, value = TRUE)
+    full_df <- full_df %>%
+      dplyr::filter(List.ID == pattern[2])
+  }
+  
+  return(full_df) # return a list of dataframes
 }
+
 
 ################################################################
 ################################################################
