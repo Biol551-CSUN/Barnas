@@ -1,0 +1,368 @@
+---
+title: "Working with Words"
+author: 'Danielle Barnas'
+date: "4/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+gif count: 1
+
+## Load packages
+```{r}
+library(here)
+library(tidyverse)
+library(tidytext)
+library(wordcloud2)
+library(janeaustenr)
+```
+
+# stringr
+
+## Intro to {stringr}
+
+- String and character are the same thing  
+- You can have several strings in a vector  
+
+**Utiliies:**  
+Manipulation  
+Whitespace tools  
+Locale sensitive operations  
+Pattern matching functions  
+
+## Manipulation
+
+paste()
+- paste words together, could be all characters, could be a mix of characters and non-character values  
+- can specify the kind of separation between  
+
+Ex.
+```{r}
+paste("High temp", "Low pH")
+ 
+paste("High temp", "Low pH", sep = "-")
+```
+
+
+paste0()
+- removes the space between the separate strings  
+
+Ex.
+```{r}
+paste0("High temp", "Low pH")
+```
+
+ 
+#### Working with vectors
+```{r}
+shapes <- c("square", "circle", "triangle")
+paste("My favorite shape is a", shapes)
+
+
+two_cities <- c("best","worst")
+paste("It was the", two_cities, "of times.")
+```
+
+
+#### Individual characters
+
+**Legnth of strings**
+```{r}
+shapes
+
+str_length(shapes)
+```
+
+
+**Extract specific characters**  
+
+Find, extract, replace at a specific point in the string
+```{r}
+seq_data<-c("ATCCCGTC")
+str_sub(seq_data,start = 3, end = 3) <- "A"
+# start = character number within string to start
+# end = character number within string to end
+```
+
+Duplicate a string
+```{r}
+str_dup(seq_data, times = c(2,3))
+# times = number of times you wnat to duplicate the string
+```
+
+## Whitespace
+
+```{r}
+badtreatments <-c("High", " High", "High ", "Low", " Low")
+
+# remove all whitespace
+str_trim(badtreatments)
+
+# remove whitespace from only the left side
+str_trim(badtreatments, side = "left")
+```
+Add whitespace
+
+```{r}
+str_pad(badtreatments, 5, side = "right")
+# the 5 indicates how many total characters to have in each string
+
+str_pad(badtreatments, 5, side = "right", pad = "1")
+# the pad indicates what character to add, default is whitespace
+```
+
+## Locale Sensitive
+
+
+
+```{r}
+x <- "I love R:"
+
+str_to_upper(x) # ALL CAPS
+str_to_lower(x) # all lower case
+str_to_title(x) # First Letter Is Capitalized
+```
+
+## Pattern Matching
+
+view, detect, locate, extract, match, replace, and split strings based on specific patterns
+
+```{r}
+data <- c("AAA", "TATA", "CTAG", "GCTT")
+
+str_view(data, pattern = "CT")
+
+str_detect(data, pattern = "A")
+str_detect(data, pattern = "AT")
+
+str_locate(data, pattern = "AT")
+```
+
+## Regex: regular expressions
+
+Want to search for something more complicated... like find all the numbers, letters, or special characters.  
+
+We will learn:  
+Metacharacers  
+Sequences  
+Quantifiers  
+Character classes  
+POSIX character classes (Portable Operating System Interface)  
+
+## Metacharacters
+
+Use two backslashes to use the metacharacter as a normal character
+
+```{r}
+vals<-c("a.b","b.c","c.d")
+
+str_replace(vals, "\\.", " ")
+# only replaces the first instance of the pattern character
+
+# check if there is a way to look for second, third, last instance, etc.
+
+vals<-c("a.b.c", "c.d.b", "b.a.c")
+str_replace_all(vals, "\\.", " ")
+# replaces all of that pattern character
+
+```
+
+## Sequences
+
+```{r}
+val2 <- c("test 123", "test 456", "test")
+
+str_subset(val2, "\\d") # finds first instance of anything that has any digits
+```
+
+## Character class
+
+**Quantification of text**
+```{r}
+str_count(val2, "[aeiou]")
+# counts all the values in the string that match any of those items in the brackets
+
+str_count(val2, "[0-9]")
+
+```
+
+## Quantifiers
+
+^ beginning of string
+$ end of string
+\n newline
+* zero or more of previous
+?zero or one of previous
+{5} exactly 5 previous
+{2,5} between 2 and 5 of previous expression
+{2, } 2 or more of previous expression
+
+
+```{r}
+strings<-c("550-153-7578",
+         "banana",
+         "435.114.7586",
+         "home: 672-442-6739")
+```
+
+Make a regex that finds all the strings that contain a phone number. We know there is a specific pattern (3 numbers, 3 numbers, 4 numbers and it can have either a "." or "-" to separate them). Let's also say we know that the first number cannot be a 1
+
+```{r}
+phone <- "([2-9][0-9]{2})[- .]([0-9]{3})[- .]([0-9]{4})"
+# anything within a bracket is explicit.
+# have each argument contianed in parentheses
+# first number is any number other than 0 or 1
+# then have 2 numbers that can be any number
+# then a dash or a dot
+# then have three numbers that can be any number
+# then a dash or a dot
+# then have four numbers that can be any number 
+
+phone2 <-"([2-9][\\d]{2})[- .]([\\d]{3})[- .]([\\d]{4})"
+
+# same as above but replaces the 0-9 with the digit sequence identifier
+```
+
+If you wanted to find a specific area code, you could have to eitiher write it like [8][1][8] or ["818"]
+
+
+Then see which of the strings has the correct phone syntax
+```{r}
+str_detect(strings, phone)
+# kicks out the banana
+
+str_detect(strings, phone2)
+```
+
+
+## Think, Pair, Share
+
+```{r}
+# subset only the strings with phone numbers
+test<-str_subset(strings, phone)
+test
+```
+
+Let's clean it up. Lets replace all the "." with "-" and extract only the numbers (leaving the letters behind). Remove any extra white space. You can use a sequence of pipes.
+
+```{r}
+test %>% 
+  str_replace_all(pattern = "\\.", "-") %>% 
+  str_replace_all(pattern = "[a-zA-Z] | \\:",replacement = "") %>% 
+  str_trim()
+```
+
+
+# tidytext
+
+```{r}
+head(austen_books())
+tail(austen_books())
+```
+
+## Clean up and add column for line and chapter
+
+```{r}
+original_books <- austen_books() %>% # all of her books
+  group_by(book) %>% 
+  mutate(line = row_number(), # enumerate every line of the book
+         chapter = cumsum(str_detect(text,
+                                     regex("^chapter [\\divxlc]",# start with word chapter; then has any digit or roman numeral
+                                           ignore_caes = T)))) %>% # can be either an upper case chapter or lower case chapter, and can either be upper case roman numeral or lower case roman numeral
+  ungroup()
+  
+head(original_books)
+```
+
+In tidytext each word is refered to as a token. The function to unnest the data so that its only one word per row is unnest_tokens().
+```{r}
+tidy_books <- original_books %>% 
+  unnest_tokens(output = word, input = text)
+# add a column named word, with the input as the text column
+# removes whitepsace and makes everything lowercase
+
+
+head(tidy_books) # now we can view every individual word/token
+```
+
+## Stopwords
+
+Words that are common and don't really have important meaning (e.g. "and","by","therefore"...). These are called stopwords. We can use the function "get_stopwords()" to essentially remove these words from our dataframe.
+```{r}
+#see an example of all the stopwords
+head(get_stopwords())
+```
+
+
+**Remove stopwords**
+```{r}
+cleaned_books <- tidy_books %>% 
+  anti_join(get_stopwords())
+
+head(cleaned_books)
+```
+
+```{r}
+cleaned_books %>% 
+  count(word, sort = T)
+
+cleaned_books %>% 
+  group_by(book) %>% 
+  count(word, sort = T)
+  
+```
+**Sentiment analysis**
+
+Look for key words in the text. Here, using the sentiments function, but can search for any key words
+```{r}
+sent_word_counts <- tidy_books %>% 
+  inner_join(get_sentiments()) %>% 
+  count(word, sentiment, sort = T)
+
+head(sent_word_counts)
+```
+
+
+## Plot it
+
+Pos words as pos numbers and Neg words as neg numbers
+
+```{r}
+sent_word_counts %>%
+  filter(n > 150) %>% # take only if there are over 150 instances of it
+  mutate(n = ifelse(sentiment == "negative", -n, n)) %>% # add a column where if the word is negative make the count negative
+  mutate(word = reorder(word, n)) %>% # sort it so it gows from largest to smallest
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col() +
+  coord_flip() +
+  labs(y = "Contribution to sentiment")
+```
+
+Wordcloud
+```{r}
+words<-cleaned_books %>%
+  count(word) %>% # count all the words
+  arrange(desc(n))%>% # sort the words
+  slice(1:100) #take the top 100
+
+wordcloud2(words, shape = 'triangle', size=0.3) # make a wordcloud out of the top 100 words
+```
+
+Today's Totally Awesome R Package
+ggirl (gg in real life)
+
+
+
+
+
+
+
+
+
+
+
