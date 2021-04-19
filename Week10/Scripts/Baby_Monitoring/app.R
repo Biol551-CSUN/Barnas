@@ -9,20 +9,36 @@
 
 library(shiny)
 library(shinythemes)
+library(shinyWidgets)
 library(tidyverse)
 library(here)
 library(png)
 library(grid)
 library(ggimage)
 
+# Customize Theme 
+ # css <- tags$head(tags$style(HTML(
+ #    'body {
+ #            background-color: #EE87BD;
+ #        }')))
 
-babydata <- read_csv(here::here("HatchBabyExport.csv"))
+# Import data
+babydata <- read_csv("HatchBabyExport.csv")
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
     
-    # Theme
-    theme = shinytheme("darkly"),
+  # Theme
+  #tags$head(tags$style(css)), # apply theme customization
+  #theme = shinytheme("darkly"),
+  paste0("Visited on ", Sys.Date()), # text top left of UI
+  
+  # use a gradient in background
+  setBackgroundColor(
+    color = c("#F9E3EF", "#EE87BD"),
+    gradient = "radial",
+    direction = c("top", "left")
+  ),
 
     # Application title
     titlePanel("Monitoring the first two months of the Lil Silbigers"),
@@ -30,7 +46,7 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-            radioButtons(
+          radioButtons(
                 inputId = "which.baby", # the id tag that relates to a server object
                 label = "Lil Beeb:",
                 choices = c("Blakely", "Micah"), # gives what choices the user sees
@@ -64,9 +80,9 @@ server <- function(input, output) {
     palette<-c("mediumaquamarine", "steelblue", "orchid4")
     
     # create list of emoji image paths
-    images <- c(here("www","Poop.png"),
-                here("www","Drip.png"),
-                here("www","Skull.png"))
+    images <- c("www/Poop.png",
+                "www/Drip.png",
+                "www/Skull.png")
     
     diaper <- babydata %>% 
       rename(Name = 'Baby Name',
@@ -104,7 +120,9 @@ server <- function(input, output) {
             ggtitle(paste(" Weight of Baby" , input$which.baby ,"\n February and March", sep = " ")) + 
             geom_point(color = "orchid4") +
             geom_smooth(method = "lm", se=F, color = "orchid4") +
-            theme_classic(base_size = 16)
+            theme_classic(base_size = 16) +
+            theme(panel.background = element_rect(fill = "#2E2C2C"),
+                  panel.grid = element_line(color = "#2E2C2C"))
         
     })
     
@@ -117,6 +135,8 @@ server <- function(input, output) {
         geom_bar(stat = "identity") +
         scale_fill_manual(values = palette) +
         theme_classic(base_size = 16) +
+        theme(panel.background = element_rect(fill = "#2E2C2C"),
+              panel.grid = element_line(color = "#2E2C2C")) +
         geom_image(aes(image = images), size = 0.1) +
         labs(x = "Diaper Condition",
              y = "Total Diaper Count",
