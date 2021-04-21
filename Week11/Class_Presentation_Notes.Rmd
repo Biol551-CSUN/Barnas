@@ -179,12 +179,12 @@ library(tidyverse)
 inat_map function
 
 ```{r}
-lizard <- #some data frame from iNat
-
-lizard_map <- inat_map(lizard)
-
-lizard_map +
-  borders("stats") # etc....
+# lizard <- #some data frame from iNat
+# 
+# lizard_map <- inat_map(lizard)
+# 
+# lizard_map +
+#   borders("stats") # etc....
 ```
 
 Map using ggplot

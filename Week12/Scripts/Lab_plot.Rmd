@@ -1,0 +1,162 @@
+---
+title: "Week 12 Lab - Words and Forcats"
+author: "Danielle Barnas, Group 1"
+date: "4/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = F,
+                      warning = F)
+```
+
+
+# Libraries
+```{r}
+library(tidyverse)
+library(here)
+library(tidytext)
+
+rm(list = ls())
+```
+
+# Load Data
+
+```{r}
+tide <- read_csv(here("Week12","Data","intertidaldata.csv"))
+tide.lat <- read_csv(here("Week12","Data","intertidaldata_latitude.csv"))
+
+View(tide)
+View(tide.lat)
+```
+
+
+Clean up quadrat factor names
+```{r}
+# need to tidy some of the tide level text
+wrong <- tide %>% 
+  distinct(Quadrat) 
+# make sure I get the exact strings as displayed in the dataframe
+wrong1<-as.character(wrong[1,])
+wrong2<-as.character(wrong[5,])
+
+tide$Quadrat <- tide$Quadrat %>% 
+  str_replace_all(pattern = wrong1, replacement = "Low") %>% 
+  str_replace_all(pattern = wrong2, replacement = "Mid")
+
+```
+
+Percentages in tide don't all add up to exactly 100. Sum and divide each by sum to get relative percents per site (across 10 transects)
+
+```{r}
+glimpse(tide)
+tidytide <- tide %>% 
+  rename(Bare_Rock = 'Bare Rock', Small_Barnacles = 'Small Barnacles', 
+         Large_Barnacles = 'Large Barnacles', Gooseneck_Barnacles = 'Gooseneck Barnacles') %>% 
+  group_by(Site, Quadrat) %>% 
+  mutate(Bare_Rock = sum(Bare_Rock),
+         Algae = sum(Algae),
+         Mussels = sum(Mussels),
+         Small_Barnacles = sum(Small_Barnacles),
+         Large_Barnacles = sum(Large_Barnacles),
+         Gooseneck_Barnacles = sum(Gooseneck_Barnacles),
+         Anemone = sum(Anemone)) %>% 
+  ungroup() %>% 
+  mutate(sum = Bare_Rock + Algae + Mussels + Small_Barnacles + Large_Barnacles + Gooseneck_Barnacles + Anemone) %>% 
+  mutate(Bare_Rock = Bare_Rock/sum*100,
+         Algae = Algae/sum*100,
+         Mussels = Mussels/sum*100,
+         Small_Barnacles = Small_Barnacles/sum*100,
+         Large_Barnacles = Large_Barnacles/sum*100,
+         Gooseneck_Barnacles = Gooseneck_Barnacles/sum*100,
+         Anemone = Anemone/sum*100) %>% 
+  mutate(new.sum = Bare_Rock + Algae + Mussels + Small_Barnacles + Large_Barnacles + Gooseneck_Barnacles + Anemone) %>% 
+  select(-c(Transect, 'Whelks (Counts)', 'Crabs (Counts)', 'Stars (Counts)')) %>% 
+  distinct()
+head(tidytide)
+```
+
+Pivot longer to plot
+```{r}
+longtide <- tidytide %>% 
+  pivot_longer(cols = c(Bare_Rock:Anemone), names_to = "Group", values_to = "Values")
+head(longtide)
+```
+
+# Quadrat as factor
+```{r}
+longtide$Quadrat <- factor(longtide$Quadrat, levels = c("Low", "Mid", "High"))
+
+#observe groups
+longtide %>% 
+  distinct(Group)
+```
+
+
+Group by latitude
+```{r}
+# join latitude column to dataframe
+tidytidelat <- left_join(longtide, tide.lat)
+
+# set Latitudes as factors
+#tidytidelat$Latitude <- factor(tidytidelat$Latitude)
+```
+
+# Plotting data
+
+```{r}
+tidytidelat %>%
+  filter(Site == "Scripps" | Site == "Bodega" | Site == "Pyramid Point" | Site == "Starfish Point") %>% 
+  unite(col = Site_Lat, Site, Latitude, sep = " - Lat: ", remove = F) %>% 
+  ggplot(aes(x = Quadrat, y = Values, color = Group, fill = Group)) +
+  geom_col(width = 0.99) + # want no space between columns
+  scale_fill_viridis_d() + #color blind friendly palette
+  scale_color_viridis_d() +
+  theme(panel.background = element_rect(fill = "white"), panel.border = element_blank(), #white background
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), #no gridlines
+        axis.line = element_line(colour = "black")) + #black axis lines
+  labs (x = "Tide Level", y = "Percent Cover per Transect") +
+  facet_wrap(~ fct_reorder(Site_Lat, Latitude), nrow = 1) + # order figures by Latitude
+  ggsave(here("Week12","Output","Lab_Plot.png"), height = 8, width = 14)
+  
+```
+
+
+# Alternative Plot:
+```{r}
+tidytidelat %>% 
+  ggplot(aes(x = Latitude, y = Values, color = Quadrat, fill = Quadrat)) +
+  geom_col(stat = "identity", width = 0.99) + # want no space between columns
+  scale_fill_viridis_d() + #color blind friendly palette
+  scale_color_viridis_d() +
+  theme(panel.background = element_rect(fill = "white"), panel.border = element_blank(), #white background
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), #no gridlines
+        axis.line = element_line(colour = "black")) + #black axis lines
+  labs (x = "Latitude", y = "Percent Cover per Transect") +
+  facet_wrap(~ Group)
+```
+
+
+
+May not be possible:
+
+Plot again with latitudes on x axis
+```{r}
+tidytidelat %>% 
+  ggplot(aes(x = Latitude, y = Values, group = Quadrat, color = Group, fill = Group)) +
+  geom_col(position = "dodge", aes(x = Quadrat, y = Values), width = 0.99) +
+  geom_col() + # want no space between columns
+  scale_fill_viridis_d() + #color blind friendly palette
+  scale_color_viridis_d() +
+  theme(panel.background = element_rect(fill = "white"), panel.border = element_blank(), #white background
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), #no gridlines
+        axis.line = element_line(colour = "black"), axis.text.x = element_text(angle = 45, vjust = -0.01)) + #black axis lines, text angle
+  labs (x = "Latitude", y = "Percent Cover per Transect")
+```
+
+
+
+
+
+

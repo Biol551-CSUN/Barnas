@@ -1,0 +1,197 @@
+---
+title: "Forcats"
+author: "Danielle Barnas"
+date: "4/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = F,
+                      warning = F)
+```
+
+```{r}
+library(tidytuesdayR)
+library(tidyverse)
+```
+
+
+```{r}
+#tuesdata <- tidytuesdayR::tt_load(2021, week = 7)
+#income_mean <- tuesdata$income_mean
+
+income_mean <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/income_mean.csv')
+```
+
+## Factors
+Always defaults to alphabetical order
+
+```{r}
+fruits <- factor(c("Apple","Grape","Banana"))
+fruits
+```
+
+Factor Booby-Traps!
+```{r}
+test<-c("A","1","2")
+as.numeric(test)
+
+# test as a factor
+test<-factor(test)
+as.numeric(test) 
+# yikes
+```
+
+read.csv vs read_csv  
+- read.csv automatically brings in strings as factors  
+- read_csv automatically brings in strings as characters  
+
+## Forcats
+Automatically loaded in with tidyverse
+```{r}
+glimpse(starwars)
+```
+
+How many individuals of each species are present across starwars films
+
+```{r}
+starwars %>% 
+  filter(!is.na(species)) %>% 
+  count(species, sort = T)
+```
+
+Want to lump all the species together than had less than 3 individuals. use fct_lump() which converts the data into a factro and lumps it together
+```{r}
+star_counts <-starwars %>% 
+  filter(!is.na(species)) %>% 
+  mutate(species = fct_lump(species, n = 3)) %>% 
+  count(species)
+star_counts
+```
+Notice it's now in alphabetical order, because they are set as factors
+
+
+## Reordering factors
+
+```{r}
+star_counts %>% 
+  ggplot(aes(x = species, y = n)) +
+  geom_col()
+```
+
+More helpful to show in some order of n; lowest to highest
+```{r}
+star_counts %>% 
+  ggplot(aes(x = fct_reorder(species, n), y = n)) + # reorder the factor of species
+  geom_col()
+```
+
+And if we wanted to show highest to lowest
+
+```{r}
+star_counts %>% 
+  ggplot(aes(x = fct_reorder(species, n, .desc = TRUE), y = n)) + # reorder the factor of species
+  geom_col() +
+  labs(x = "Species")
+```
+
+Can also reorder by some function of n (need to revisit slide)
+
+
+## Reordering line plots
+Make a line plot and reorder the legend to match the order of hte lines.
+```{r}
+glimpse(income_mean)
+
+total_income<-income_mean %>% 
+  group_by(year, income_quintile) %>% 
+  summarise(income_dollars_sum = sum(income_dollars)) %>% 
+  mutate(income_quintile = factor(income_quintile))
+
+total_income %>% 
+  ggplot(aes(x = year, y = income_dollars_sum, color = income_quintile)) +
+  geom_line()
+  
+```
+
+Use fct_reorder2, which reorders the data by two variables
+
+```{r}
+total_income %>% 
+  ggplot(aes(x = year, y = income_dollars_sum, color = fct_reorder2(income_quintile, year, income_dollars_sum))) +
+  geom_line() +
+  labs(color = "Income Quintile")
+```
+
+
+Reorder levels directly in a vector because I said so
+```{r}
+x1 <- factor(c("Jan","Mar","Apr","Dec"))
+x1
+
+x1 <- factor(c("Jan","Mar","Apr","Dec"), levels = c("Jan","Mar","Apr","Dec"))
+x1
+```
+
+
+## Subset data with factors
+
+Let's say instead of grouping our species that have < 3 counts into "Other" we just filter them out
+
+```{r}
+starwars_clean <- starwars %>% 
+  filter(!is.na(species)) %>% 
+  count(species,sort = T) %>% 
+  mutate(species = factor(species)) %>% # make species a factor
+  filter(n>3) # only keep species that have more than 3
+
+levels(starwars_clean$species)
+```
+
+
+Only the data that we subsetted are in the dataframe, but all the levels from all possible factors are still there... this causes all sorts of problems when you go to plot. Using either fct_drop() within mutate() or droplevels() (the latter is in base R), we can remove any extra levels not included in the dataframe
+```{r}
+starwars_clean <- starwars %>% 
+  filter(!is.na(species)) %>% 
+  count(species,sort = T) %>% 
+  mutate(species = factor(species)) %>% # make species a factor
+  filter(n>3) %>% # only keep species that have more than 3 
+  droplevels() # drop extra levels
+
+levels(starwars_clean$species)
+```
+
+## Recode levels
+```{r}
+starwars_clean <- starwars %>% 
+  filter(!is.na(species)) %>% 
+  count(species,sort = T) %>% 
+  mutate(species = factor(species)) %>% # make species a factor
+  filter(n>3) %>% # only keep species that have more than 3 
+  droplevels() %>% # drop extra levels 
+  mutate(species = fct_recode(species, "Humanoid" = "Human"))
+
+levels(starwars_clean$species)
+```
+
+Today's Totally Awesome R Package
+gm (generate music)
+
+```{r}
+library(gm)
+```
+
+Then follow directions from [here](https://flujoo.github.io/gm/) to download the [MuseScore program](https://musescore.org/en) and tell R where the path to that program is.
+
+```{r}
+# m <- 
+#   Music() +  # initialize a Music object
+#   Meter(4, 4) + # add a 4/4 time signature
+#   Line(list("C5", "D5", "E5", "F5"), list(1, 1, 1, 1)) # add a musical line of four quarter notes
+# show(m, to = c("score", "audio"))
+```
+
+
+
+
