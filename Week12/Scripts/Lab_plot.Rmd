@@ -116,7 +116,9 @@ tidytidelat %>%
   theme(panel.background = element_rect(fill = "white"), panel.border = element_blank(), #white background
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(), #no gridlines
         axis.line = element_line(colour = "black")) + #black axis lines
-  labs (x = "Tide Level", y = "Percent Cover per Transect") +
+  labs (x = "Tide Level", y = "Percent Cover per Transect",
+        title = "Percent Cover of Intertidal Taxa by Latitude",
+        subtitle = "Benthic cover is dependent on site and latitude") +
   facet_wrap(~ fct_reorder(Site_Lat, Latitude), nrow = 1) + # order figures by Latitude
   ggsave(here("Week12","Output","Lab_Plot.png"), height = 6, width = 12)
   
