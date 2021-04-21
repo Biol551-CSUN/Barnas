@@ -107,7 +107,7 @@ tidytidelat <- left_join(longtide, tide.lat)
 
 ```{r}
 tidytidelat %>%
-  filter(Site == "Scripps" | Site == "Bodega" | Site == "Pyramid Point" | Site == "Starfish Point") %>% 
+  filter(Site == "Scripps" | Site == "Bodega" | Site == "Pyramid Point" | Site == "Starfish Point") %>%
   unite(col = Site_Lat, Site, Latitude, sep = " - Lat: ", remove = F) %>% 
   ggplot(aes(x = Quadrat, y = Values, color = Group, fill = Group)) +
   geom_col(width = 0.99) + # want no space between columns
