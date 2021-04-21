@@ -118,7 +118,7 @@ tidytidelat %>%
         axis.line = element_line(colour = "black")) + #black axis lines
   labs (x = "Tide Level", y = "Percent Cover per Transect") +
   facet_wrap(~ fct_reorder(Site_Lat, Latitude), nrow = 1) + # order figures by Latitude
-  ggsave(here("Week12","Output","Lab_Plot.png"), height = 8, width = 14)
+  ggsave(here("Week12","Output","Lab_Plot.png"), height = 6, width = 12)
   
 ```
 
