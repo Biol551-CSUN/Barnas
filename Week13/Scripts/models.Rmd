@@ -1,0 +1,260 @@
+---
+title: "Modeling"
+author: "Danielle Barnas, Group 1"
+date: "4/28/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = F,
+                      message = F)
+```
+
+# Libraries
+```{r}
+library(tidyverse)
+library(here)
+library(palmerpenguins)
+library(broom)
+library(performance)
+library(modelsummary)
+library(tidymodels)
+```
+
+
+
+# Anatomy of a basic linear model
+
+## Simple Linear Model
+mod<-lm(y ~ x, data = df)
+
+lm = linear model, y = dependent variable, x = independent variable
+
+"y is a function of x"
+
+## Multiple regression
+mod<-lm(y~x1 + x2, data = df)
+
+## Interaction term
+mod<-lm(y~x1*x2, data = df) the * will compute x1+x2+x1:x2
+
+
+## Working with Palmer Penguins
+```{r}
+Peng_mod<-lm(bill_length_mm ~ bill_depth_mm*species, data = penguins)
+```
+
+
+
+## Check model assumptions with performance package
+```{r}
+check_model(Peng_mod)
+```
+
+## View results: base R
+ANOVA Table
+```{r}
+anova(Peng_mod)
+```
+
+Coefficients (effect size) with error
+```{r}
+summary(Peng_mod)
+```
+
+## Broom package cleans up model output data
+- tidy  
+- glance  
+- augment  
+
+```{r}
+# Tidy coefficients
+coeffs <- tidy(Peng_mod)
+coeffs
+```
+
+```{r}
+# Tidy r2, etc; puts all in one row
+results <- glance(Peng_mod)
+results
+```
+
+```{r}
+# Tidy residuals, etc; same number of rows as original dataframe
+resid_fitted <- augment(Peng_mod)
+resid_fitted
+```
+
+## Results in modelsummary
+
+Creates tables and plots to summarize statistical models and data in R
+
+
+Compare Peng_mod with one that does not have hte species as an interaction term
+```{r}
+# New model
+Peng_mod_noX<-lm(bill_length_mm ~ bill_depth_mm, data = penguins)
+#Make a list of models and name them
+models<-list("Model with interaction" = Peng_mod,
+             "Model with no interaction" = Peng_mod_noX)
+#Save the results as a .docx
+modelsummary(models, output = here("Week13","Output","table.docx"))
+```
+
+## Modelplot
+
+Canned coefficient modelplots
+```{r}
+modelplot(models) +
+  labs(x = 'Coefficients',
+       y = 'Term names')
+```
+
+## Many models with purrr, dplyr, and broom
+
+Let's say you want to plot and compare lots of different models at the same time and view the results
+
+First, createa a list for the data by each species.  We do this using nest().  We are going to nest the data by species
+
+Nest takes all the data and puts it into a set of lists.  Here we're saying "nest all the data except for species"
+
+```{r}
+models <- penguins %>% 
+  ungroup() %>% # the penguin data are grouped so we need to ungroup them
+  nest(-species) # nest all teh data by species
+
+m
+models$data
+```
+
+
+## map a model to each of the groups in the list
+
+```{r}
+models<- penguins %>%
+  ungroup()%>% # the penguin data are grouped so we need to ungroup them
+  nest(-species) %>% # nest all the data by species 
+  mutate(fit = map(data, ~lm(bill_length_mm~body_mass_g, data = .)))
+
+models
+
+models$fit # shows you each of the 3 models
+```
+
+
+View the results. First, let's mutate the models list so that we have a tidy coefficient dataframe (using tidy()) and a tidy model results dataframe (using glance())
+```{r}
+results<-models %>%
+   mutate(coeffs = map(fit, tidy), # look at the coefficients
+          modelresults = map(fit, glance))  # R2 and others
+results
+```
+
+Next, select what we want to show and unnest it to bring it back to a dataframe
+
+```{r}
+results<-models %>%
+   mutate(coeffs = map(fit, tidy), # look at the coefficients
+          modelresults = map(fit, glance)) %>% # R2 and others 
+   select(species, coeffs, modelresults) %>% # only keep the results
+   unnest() # put it back in a dataframe and specify which columns to unnest
+
+View(results)
+```
+
+
+## Other very common stats packages
+
+- stats: General (lm)and generalized (glm) linear models (already loaded with base R)  
+- lmer : mixed effects models  
+- lmerTest' : getting results from lmer  
+- nlme : non-linear mixed effects models  
+- mgcv, gam : generalized additive models  
+- brms, rstan, and many more : Bayesian modeling  
+- lavaan, peicewiseSEM : Structural Equation Models  
+- rpart, randomForest, xgboost, and more : Machine learning models  
+
+
+# Tidymodels
+Uses tidyverse lenguage to run models
+
+Start by specifying the *functional form* using the parsnip package.  In our case, we will use a linear regression which is coded like:
+
+linear_reg()
+
+Then set the *engine* for what type of linear regression we are modeling.  For example, we could use an OLS regression or Bayesian or several other options.
+
+```{r}
+lm_mod<-linear_reg() %>%
+  set_engine("lm")
+
+lm_mod
+```
+
+Next we add the model fit
+```{r}
+lm_mod<-linear_reg() %>%
+  set_engine("lm") %>%
+  fit(bill_length_mm ~ bill_depth_mm*species, data = penguins)
+
+lm_mod
+```
+
+
+Lastly, we add the tidy it. And now we can pipe this into plots, etc. Nice, tidy way to model.
+```{r}
+lm_mod<-linear_reg() %>%
+  set_engine("lm") %>%
+  fit(bill_length_mm ~ bill_depth_mm*species, data = penguins) %>%
+  tidy()
+
+lm_mod
+```
+
+
+## Pipe to a plot
+```{r}
+lm_mod<-linear_reg() %>%
+  set_engine("lm") %>%
+  fit(bill_length_mm ~ bill_depth_mm*species, data = penguins) %>%
+  tidy() %>%
+  ggplot()+
+    geom_point(aes(x = term, y = estimate))+
+    geom_errorbar(aes(x = term, ymin = estimate-std.error,
+                      ymax = estimate+std.error), width = 0.1 )+
+  coord_flip()
+
+lm_mod
+```
+
+# Today's Totally Awesome R Package
+
+## Pushoverr
+```{r}
+library(pushoverr)
+```
+
+
+# Final Presentation 
+
+- Go back to recording in Lecture 4, second video, 20 minutes in
+- Read over rubric
+- If you do markdown, make it beautiful.
+- The goal is to make everything publication quality
+  - figures
+  - markdown
+  - website
+  - shiny app
+  - xarigan
+  - etc. make it fancy
+- Make the new repository in the Biol551 Organization
+- Look at specific expectations for the README.md file
+- Everything is due by 9AM on May 10
+
+
+
+
+
+
+
